@@ -1,0 +1,4 @@
+.terraform**
+terraform.tf**
+userdata.tpl
+windows-ssh-config.tpl
