@@ -38,7 +38,7 @@ def lambda_handler(event, context):
 
     return final_json
 
-    #dynamodb = boto3.client('rds')
+    rds = boto3.client('rds')
     #table = dynamodb.Table('PowerData')
 
     #with table.batch_writer() as batch:

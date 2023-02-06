@@ -1,3 +1,32 @@
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+
+  cidr            = "10.1.0.0/18"
+  azs             = ["us-east-1a"]
+  private_subnets = ["10.1.0.0/24", "10.1.1.0/24"]
+
+  create_database_subnet_group = true
+}
+
+module "rds" {
+  source = "terraform-aws-modules/rds/aws"
+
+  identifier = "testdb"
+
+  engine            = "postgres"
+  engine_version    = "14.6"
+  instance_class    = "db.t3.micro"
+  family            = "postgres14"
+  allocated_storage = 5
+  storage_encrypted = false
+
+  db_name  = "testdb"
+  username = "username"
+  port     = "5432"
+
+  db_subnet_group_name = module.vpc.database_subnet_group
+}
+
 module "lambda_function_from_container_image" {
   source = "terraform-aws-modules/lambda/aws"
 
@@ -12,6 +41,12 @@ module "lambda_function_from_container_image" {
   image_uri     = module.docker_image.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
+
+  environment {
+    variables = {
+      rds
+    }
+  } 
 }
 
 module "docker_image" {
