@@ -2,13 +2,14 @@ module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
   cidr            = "10.1.0.0/18"
-  azs             = ["us-east-1a"]
+  azs             = ["us-east-1a", "us-east-1b"]
 
-  public_subnets = ["10.1.0.0/24"]
-  database_subnets = ["10.2.0.0/24"]
-  intra_subnets = ["10.3.0.0/24"]
+  public_subnets = ["10.1.0.0/24", "10.1.1.0/24"]
+  database_subnets = ["10.1.2.0/24", "10.1.3.0/24"]
+  intra_subnets = ["10.1.4.0/24", "10.1.5.0/24"]
 
   create_database_subnet_group = true
+  database_subnet_group_name = "power_db"
 }
 
 module "rds" {
@@ -23,11 +24,11 @@ module "rds" {
   allocated_storage = 5
   storage_encrypted = false
 
-  db_name  = "testdb"
-  username = "username"
-  port     = "5432"
+  db_name  = var.db_name
+  username = var.db_username
+  port     = 5432
 
-  db_subnet_group_name = module.vpc.database_subnet_group
+  db_subnet_group_name = module.vpc.database_subnet_group_name
 }
 
 module "lambda_function_from_container_image" {
@@ -45,10 +46,11 @@ module "lambda_function_from_container_image" {
   package_type  = "Image"
   architectures = ["x86_64"]
 
-  environment {
-    variables = {
-      rds
-    }
+  environment_variables = {
+      #DB_HOSTNAME = module.rds.db_instance_endpoint
+      DB_PASSWORD = var.db_password
+      DB_USERNAME = var.db_username
+      DB_NAME = var.db_name
   }
 
   vpc_subnet_ids         = module.vpc.intra_subnets
