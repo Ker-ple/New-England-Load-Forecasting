@@ -3,7 +3,10 @@ module "vpc" {
 
   cidr            = "10.1.0.0/18"
   azs             = ["us-east-1a"]
-  private_subnets = ["10.1.0.0/24", "10.1.1.0/24"]
+
+  public_subnets = ["10.1.0.0/24"]
+  database_subnets = ["10.2.0.0/24"]
+  intra_subnets = ["10.3.0.0/24"]
 
   create_database_subnet_group = true
 }
@@ -46,7 +49,11 @@ module "lambda_function_from_container_image" {
     variables = {
       rds
     }
-  } 
+  }
+
+  vpc_subnet_ids         = module.vpc.intra_subnets
+  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  attach_network_policy = true 
 }
 
 module "docker_image" {
