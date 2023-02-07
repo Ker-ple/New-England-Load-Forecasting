@@ -6,10 +6,19 @@ module "vpc" {
 
   public_subnets = ["10.1.0.0/24", "10.1.1.0/24"]
   database_subnets = ["10.1.2.0/24", "10.1.3.0/24"]
-  intra_subnets = ["10.1.4.0/24", "10.1.5.0/24"]
+  private_subnets = ["10.1.4.0/24", "10.1.5.0/24"]
 
-  create_database_subnet_group = true
+  create_database_subnet_group           = true
+  create_database_subnet_route_table     = true
+  create_database_internet_gateway_route = true
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
   database_subnet_group_name = "power_db"
+
+  enable_nat_gateway = true
+  single_nat_gateway = false
+  one_nat_gateway_per_az = false
 }
 
 module "rds" {
@@ -23,12 +32,15 @@ module "rds" {
   family            = "postgres14"
   allocated_storage = 5
   storage_encrypted = false
+  create_random_password = false
 
   db_name  = var.db_name
   username = var.db_username
+  password = var.db_password
   port     = 5432
 
   db_subnet_group_name = module.vpc.database_subnet_group_name
+  vpc_security_group_ids = [module.vpc.default_security_group_id]
 }
 
 module "lambda_function_from_container_image" {
@@ -38,6 +50,7 @@ module "lambda_function_from_container_image" {
   description   = "My awesome lambda function from container image"
 
   create_package = false
+  timeout = 60
 
   ##################
   # Container Image
@@ -47,15 +60,22 @@ module "lambda_function_from_container_image" {
   architectures = ["x86_64"]
 
   environment_variables = {
-      #DB_HOSTNAME = module.rds.db_instance_endpoint
+      DB_HOSTNAME = module.rds.db_instance_address
       DB_PASSWORD = var.db_password
       DB_USERNAME = var.db_username
       DB_NAME = var.db_name
   }
 
-  vpc_subnet_ids         = module.vpc.intra_subnets
+  vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.vpc.default_security_group_id]
   attach_network_policy = true 
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+  ]
+  number_of_policies = 2
 }
 
 module "docker_image" {
@@ -82,9 +102,6 @@ module "docker_image" {
 
   image_tag   = "2.0"
   source_path = "./scrapers/"
-  build_args = {
-    FOO = "bar"
-  }
   platform = "linux/amd64"
 }
 
