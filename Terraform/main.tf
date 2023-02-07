@@ -28,16 +28,35 @@ module "key_pair" {
   create_private_key = true
 }
 
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
 module "ec2_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
+  version = "4.3.0"
 
   name = "node_1"
 
+  ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t2.micro"
   key_name                    = "key_1"
+  availability_zone           = element(module.vpc.azs, 0)
   subnet_id                   = element(module.vpc.public_subnets, 0)
   vpc_security_group_ids      = [module.vpc.default_security_group_id]
   associate_public_ip_address = true
+
+  create_iam_instance_profile = true
+  iam_role_description        = "IAM role for EC2 instance"
+  iam_role_policies = {
+    AdministratorAccess = "arn:aws:iam::aws:policy/AdministratorAccess"
+  }
 }
 
 module "rds" {
@@ -45,6 +64,7 @@ module "rds" {
 
   identifier = "testdb"
 
+  deletion_protection = true
   engine                 = "postgres"
   engine_version         = "14.6"
   instance_class         = "db.t3.micro"
@@ -58,6 +78,7 @@ module "rds" {
   password = var.db_password
   port     = 5432
 
+  availability_zone           = element(module.vpc.azs, 0)
   db_subnet_group_name   = module.vpc.database_subnet_group_name
   vpc_security_group_ids = [module.vpc.default_security_group_id]
 }
