@@ -81,7 +81,8 @@ def lambda_handler(event, context):
     return json.dumps({
         'response': 200,
         'message': 'data successfully sent to postgres',
-        'sample_data': final_json[0]}
+        'first_data_point': final_json[0],
+        'last_data_point': final_json[-1]}
         )
 
 def define_yyyymmdd_date_range(start, end):

@@ -26,8 +26,8 @@ locals {
   sudo systemctl start grafana-server
   sudo systemctl status grafana-server
   sudo systemctl enable grafana-server.service
-  sudo amazon-linux-extras enable postgresql14
-  sudo yum install postgresql
+  sudo amazon-linux-extras enable postgresql14 -y &&
+  sudo yum install postgresql -y
   EOT
 
   tags = {
