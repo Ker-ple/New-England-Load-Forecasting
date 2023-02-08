@@ -28,13 +28,13 @@ module "key_pair" {
   create_private_key = true
 }
 
-data "aws_ami" "amazon_linux" {
+data "aws_ami" "amazon_linux_2" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn-ami-hvm-*-x86_64-gp2"]
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
 
@@ -44,7 +44,7 @@ module "ec2_instance" {
 
   name = "node_1"
 
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)

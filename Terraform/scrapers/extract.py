@@ -28,7 +28,7 @@ def lambda_handler(event, context):
     
     resp_list = list()
     for date in date_range:
-        resp_list.append(httpx.get(url = base_url+requests[request['request_type']]+date+'.json', headers=auth).json())
+        resp_list.append(httpx.get(url = base_url+requests[request['request_type']]+date+'.json', headers=auth, timeout=None).json())
     if request['request_type'] == 'forecast':
         df_list = [pd.json_normalize(json['HourlyLoadForecasts']['HourlyLoadForecast'], sep='_') for json in resp_list]
     elif request['request_type'] == 'load':        
