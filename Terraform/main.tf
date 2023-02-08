@@ -1,3 +1,39 @@
+locals {
+  name   = "example-ec2-complete"
+  region = "eu-west-1"
+
+  user_data = <<-EOT
+  #!/bin/bash
+  sudo yum update -y &&
+  sudo yum install -y \
+  apt-transport-https \
+  ca-certificates \
+  curl \
+  gnupg-agent \
+  software-properties-common
+  echo \
+  "[grafana]
+  name=grafana
+  baseurl=https://packages.grafana.com/oss/rpm
+  repo_gpgcheck=1
+  enabled=1
+  gpgcheck=1
+  gpgkey=https://packages.grafana.com/gpg.key
+  sslverify=1
+  sslcacert=/etc/pki/tls/certs/ca-bundle.crt" >> /etc/yum.repos.d/grafana.repo
+  sudo yum install -y grafana
+  sudo systemctl daemon-reload
+  sudo systemctl start grafana-server
+  sudo systemctl status grafana-server
+  sudo systemctl enable grafana-server.service
+  EOT
+
+  tags = {
+    Owner       = "user"
+    Environment = "dev"
+  }
+}
+
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -10,15 +46,28 @@ module "vpc" {
 
   create_database_subnet_group           = true
   create_database_subnet_route_table     = true
-  create_database_internet_gateway_route = true
 
   enable_dns_hostnames       = true
   enable_dns_support         = true
   database_subnet_group_name = "power_db"
 
+  create_igw = true
   enable_nat_gateway     = true
   single_nat_gateway     = false
   one_nat_gateway_per_az = false
+}
+
+module "security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 4.5.0"
+
+  name = "ec2-postgres_sg"
+  description = "Security group for connecting to the public ec2 instance from my computer"
+
+  ingress_cidr_blocks = [module.vpc.cidr]
+  ingress_rules = ["https-443-tcp"]
+
+
 }
 
 module "key_pair" {
@@ -28,22 +77,14 @@ module "key_pair" {
   create_private_key = true
 }
 
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-}
-
 module "ec2_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
-  version = "4.3.0"
+  version = ">= 4.3.0"
 
   name = "node_1"
 
+  user_data_base64            = base64encode(local.user_data)
+  user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = "t2.micro"
   key_name                    = "key_1"

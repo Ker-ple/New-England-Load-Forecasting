@@ -1,0 +1,5 @@
+old_userdata.txt
+./.terraform/*
+.terraform*
+terraform.tfstate*
+windows*
