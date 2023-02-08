@@ -6,20 +6,20 @@
 variable "db_username" {
   description = "Database administrator username"
   type        = string
-  default     = "db_user"
+  default     = "kerple"
   sensitive   = true
 }
 
 variable "db_password" {
   description = "Database administrator password"
   type        = string
-  default     = "db_pass"
+  default     = "test_password"
   sensitive   = true
 }
 
 variable "db_name" {
   description = "Database name"
   type        = string
-  default     = "pg_db"
+  default     = "my_postgres_db"
   sensitive   = true
 }

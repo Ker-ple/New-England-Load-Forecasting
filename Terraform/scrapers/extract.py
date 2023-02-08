@@ -35,18 +35,14 @@ def lambda_handler(event, context):
         df_list = [pd.json_normalize(json['HourlySystemLoads']['HourlySystemLoad'], sep='_') for json in resp_list]
     final_df = pd.concat(df_list, ignore_index=True, axis=0)
 
-    final_df['date'] = pd.to_datetime(final_df['BeginDate']).dt.strftime('%Y-%m-%d')
-    final_df['time'] = pd.to_datetime(final_df['BeginDate']).dt.strftime('%H')
-
     if request['request_type'] == 'forecast':
-        final_df = final_df[['date', 'time', 'LoadMw']]
-        final_df.rename({'LoadMw': 'forecast_load_mw', 'date': 'forecast_date', 'time': 'forecast_time'}, axis=1, inplace=True)
+        final_df = final_df[['BeginDate', 'LoadMw']]
+        final_df.rename({'LoadMw': 'forecast_load_mw', 'BeginDate': 'forecast_datetime'}, axis=1, inplace=True)
         final_df = final_df.round({'forecast_load_mw': 0})
         final_df = final_df.astype({'forecast_load_mw': 'int16'})
         final_json = final_df.to_dict('records')
         DDL = """CREATE TABLE IF NOT EXISTS iso_ne_forecast (
-            forecast_time SMALLINT, 
-            forecast_date DATE, 
+            forecast_datetime TIMESTAMP WITH TIME ZONE, 
             forecast_load_mw INTEGER
             )"""
         conn.run(DDL)
@@ -60,14 +56,13 @@ def lambda_handler(event, context):
         print('uploaded forecast data')
     
     elif request['request_type'] == 'load':
-        final_df = final_df[['date', 'time', 'Load', 'NativeLoad']]
-        final_df.rename({'Load': 'load_mw', 'NativeLoad': 'native_load_mw', 'date': 'load_date', 'time': 'load_time'}, axis=1, inplace=True)
+        final_df = final_df[['BeginDate', 'Load', 'NativeLoad']]
+        final_df.rename({'Load': 'load_mw', 'NativeLoad': 'native_load_mw', 'BeginDate': 'load_datetime'}, axis=1, inplace=True)
         final_df = final_df.round({'load_mw': 0, 'native_load_mw': 0})
         final_df = final_df.astype({'load_mw': 'int16', 'native_load_mw': 'int16'})
         final_json = final_df.to_dict('records')
         DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
-            load_time SMALLINT, 
-            load_date DATE, 
+            load_datetime TIMESTAMP WITH TIME ZONE, 
             load_mw INTEGER,
             native_load_mw INTEGER
             )"""
@@ -85,7 +80,8 @@ def lambda_handler(event, context):
 
     return json.dumps({
         'response': 200,
-        'message': 'data successfully sent to postgres'}
+        'message': 'data successfully sent to postgres',
+        'sample_data': final_json[0]}
         )
 
 def define_yyyymmdd_date_range(start, end):

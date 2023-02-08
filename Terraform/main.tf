@@ -26,6 +26,8 @@ locals {
   sudo systemctl start grafana-server
   sudo systemctl status grafana-server
   sudo systemctl enable grafana-server.service
+  sudo amazon-linux-extras enable postgresql14
+  sudo yum install postgresql
   EOT
 
   tags = {
@@ -44,16 +46,16 @@ module "vpc" {
   database_subnets = ["10.1.2.0/24", "10.1.3.0/24"]
   private_subnets  = ["10.1.4.0/24", "10.1.5.0/24"]
 
-  create_database_subnet_group           = true
-  create_database_subnet_route_table     = true
+  create_database_subnet_group       = true
+  create_database_subnet_route_table = true
 
   enable_dns_hostnames       = true
   enable_dns_support         = true
   database_subnet_group_name = "power_db"
 
-  create_igw = true
+  create_igw             = true
   enable_nat_gateway     = true
-  single_nat_gateway     = false
+  single_nat_gateway     = true
   one_nat_gateway_per_az = false
 }
 
@@ -61,12 +63,19 @@ module "security_group" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 4.5.0"
 
-  name = "ec2-postgres_sg"
-  description = "Security group for connecting to the public ec2 instance from my computer"
+  vpc_id      = module.vpc.vpc_id
+  name        = "ec2-postgres_sg"
+  description = "Security group for connecting to the public ec2 instance from the internet"
 
-  ingress_cidr_blocks = [module.vpc.cidr]
-  ingress_rules = ["https-443-tcp"]
-
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 3000
+      to_port     = 3000
+      protocol    = "tcp"
+      description = "Access grafana from the internet"
+      cidr_blocks = "0.0.0.0/0"
+    },
+  ]
 
 }
 
@@ -78,7 +87,7 @@ module "key_pair" {
 }
 
 module "ec2_instance" {
-  source = "terraform-aws-modules/ec2-instance/aws"
+  source  = "terraform-aws-modules/ec2-instance/aws"
   version = ">= 4.3.0"
 
   name = "node_1"
@@ -89,8 +98,8 @@ module "ec2_instance" {
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)
+  vpc_security_group_ids      = [module.vpc.default_security_group_id, module.security_group.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
-  vpc_security_group_ids      = [module.vpc.default_security_group_id]
   associate_public_ip_address = true
 
   create_iam_instance_profile = true
@@ -105,7 +114,7 @@ module "rds" {
 
   identifier = "testdb"
 
-  deletion_protection = true
+  deletion_protection    = true
   engine                 = "postgres"
   engine_version         = "14.6"
   instance_class         = "db.t3.micro"
@@ -119,7 +128,7 @@ module "rds" {
   password = var.db_password
   port     = 5432
 
-  availability_zone           = element(module.vpc.azs, 0)
+  availability_zone      = element(module.vpc.azs, 0)
   db_subnet_group_name   = module.vpc.database_subnet_group_name
   vpc_security_group_ids = [module.vpc.default_security_group_id]
 }
@@ -131,7 +140,7 @@ module "lambda_function_from_container_image" {
   description   = "My awesome lambda function from container image"
 
   create_package = false
-  timeout        = 60
+  timeout        = 300
 
   ##################
   # Container Image
@@ -189,7 +198,6 @@ module "docker_image" {
 resource "random_pet" "this" {
   length = 2
 }
-
 
 #resource "aws_instance" "dev_node" {
 #  instance_type          = "t2.micro"

@@ -6,3 +6,4 @@ outputs.tf.txt
 random.txt
 secrets.tfvars.txt
 variables.tf.txt
+old_userdata.txt
