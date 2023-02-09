@@ -38,6 +38,7 @@ locals {
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
+  name = "project_vpc"
 
   cidr = "10.1.0.0/18"
   azs  = ["us-east-1a", "us-east-1b"]
@@ -59,13 +60,13 @@ module "vpc" {
   one_nat_gateway_per_az = false
 }
 
-module "security_group" {
+module "security_group_ec2_internet" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 4.5.0"
 
   vpc_id      = module.vpc.vpc_id
   name        = "ec2-postgres_sg"
-  description = "Security group for connecting to the public ec2 instance from the internet"
+  description = "Security group for allowing access to grafana from the internet"
 
   ingress_with_cidr_blocks = [
     {
@@ -76,7 +77,6 @@ module "security_group" {
       cidr_blocks = "0.0.0.0/0"
     },
   ]
-
 }
 
 module "key_pair" {
@@ -98,7 +98,7 @@ module "ec2_instance" {
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)
-  vpc_security_group_ids      = [module.vpc.default_security_group_id, module.security_group.security_group_id]
+  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
   associate_public_ip_address = true
 
