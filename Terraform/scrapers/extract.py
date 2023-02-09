@@ -22,7 +22,7 @@ def lambda_handler(event, context):
         'load': '/hourlysysload/day/'
     }
 
-    auth = {"Authorization": "Basic Y3lydXNraXJidXNAZ21haWwuY29tOkFpNlR5SkM5RGhFUkhh"}
+    auth = {"Authorization": on.environ.get('ISO_NE_AUTH')}
 
     date_range = define_yyyymmdd_date_range(request['date_begin'], request['date_end'])
     

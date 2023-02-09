@@ -193,6 +193,7 @@ module "lambda_function_from_container_image" {
     DB_PASSWORD = var.db_password
     DB_USERNAME = var.db_username
     DB_NAME     = var.db_name
+    ISO_NE_AUTH = var.iso_ne_auth
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
