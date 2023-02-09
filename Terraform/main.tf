@@ -65,7 +65,7 @@ module "security_group_ec2_internet" {
   version = ">= 4.5.0"
 
   vpc_id      = module.vpc.vpc_id
-  name        = "ec2-postgres_sg"
+  name        = "grafana_sg"
   description = "Security group for allowing access to grafana from the internet"
 
   ingress_with_cidr_blocks = [
@@ -76,7 +76,46 @@ module "security_group_ec2_internet" {
       description = "Access grafana from the internet"
       cidr_blocks = "0.0.0.0/0"
     },
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      description = "Access ec2 over https"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      description = "Access ec2 over ssh"
+      cidr_blocks = "0.0.0.0/0"
+    }
   ]
+}
+
+module "security_group_ec2_postgresdb" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 4.5.0"
+
+  vpc_id      = module.vpc.vpc_id
+  name        = "ec2-postgres_sg"
+  description = "Security group allowing connections between the grafana ec2 and the postgres db"
+
+  computed_ingress_with_source_security_group_id = [
+    {
+      rule                     = "postgresql-tcp"
+      source_security_group_id = module.security_group_ec2_internet.security_group_id
+    }
+  ]
+  number_of_computed_ingress_with_source_security_group_id = 1
+
+  computed_egress_with_source_security_group_id = [
+    {
+      rule = "postgresql-tcp"
+      source_security_group_id = module.security_group_ec2_internet.security_group_id
+    }
+  ]
+  number_of_computed_egress_with_source_security_group_id = 1
 }
 
 module "key_pair" {
@@ -98,7 +137,7 @@ module "ec2_instance" {
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)
-  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id]
+  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id, module.security_group_ec2_postgresdb.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
   associate_public_ip_address = true
 
@@ -130,7 +169,7 @@ module "rds" {
 
   availability_zone      = element(module.vpc.azs, 0)
   db_subnet_group_name   = module.vpc.database_subnet_group_name
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [module.security_group_ec2_postgresdb.security_group_id]
 }
 
 module "lambda_function_from_container_image" {
