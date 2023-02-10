@@ -21,7 +21,7 @@ locals {
   gpgkey=https://packages.grafana.com/gpg.key
   sslverify=1
   sslcacert=/etc/pki/tls/certs/ca-bundle.crt" >> /etc/yum.repos.d/grafana.repo
-  sudo yum install -y grafana
+  sudo yum install grafana -y
   sudo systemctl daemon-reload
   sudo systemctl start grafana-server
   sudo systemctl status grafana-server
@@ -88,6 +88,24 @@ module "security_group_ec2_internet" {
       to_port     = 22
       protocol    = "tcp"
       description = "Access ec2 over ssh"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      description = "Access ec2 over http"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
+  egress_with_cidr_blocks = [
+    {
+      rule = "https-443-tcp"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      rule = "grafana-tcp"
       cidr_blocks = "0.0.0.0/0"
     }
   ]
@@ -238,6 +256,8 @@ module "docker_image" {
 resource "random_pet" "this" {
   length = 2
 }
+
+
 
 #resource "aws_instance" "dev_node" {
 #  instance_type          = "t2.micro"
