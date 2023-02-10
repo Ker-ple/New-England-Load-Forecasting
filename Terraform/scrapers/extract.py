@@ -41,7 +41,7 @@ def lambda_handler(event, context):
         final_df = final_df.round({'forecast_load_mw': 0})
         final_df = final_df.astype({'forecast_load_mw': 'int16'})
         final_json = final_df.to_dict('records')
-        DDL = """CREATE TABLE IF NOT EXISTS iso_ne_forecast (
+        DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
             forecast_datetime TIMESTAMP WITH TIME ZONE, 
             forecast_load_mw INTEGER
             )"""
