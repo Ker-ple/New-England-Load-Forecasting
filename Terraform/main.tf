@@ -1,7 +1,4 @@
 locals {
-  name   = "example-ec2-complete"
-  region = "eu-west-1"
-
   user_data = <<-EOT
   #!/bin/bash
   sudo yum update -y &&
@@ -29,11 +26,6 @@ locals {
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
   EOT
-
-  tags = {
-    Owner       = "user"
-    Environment = "dev"
-  }
 }
 
 module "vpc" {
@@ -171,7 +163,7 @@ module "rds" {
 
   identifier = "testdb"
 
-  deletion_protection    = true
+  deletion_protection    = false
   engine                 = "postgres"
   engine_version         = "14.6"
   instance_class         = "db.t3.micro"
@@ -190,11 +182,11 @@ module "rds" {
   vpc_security_group_ids = [module.security_group_ec2_postgresdb.security_group_id]
 }
 
-module "lambda_function_from_container_image" {
+module "iso_ne_extract_load_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.this.id}-lambda-from-container-image"
-  description   = "My awesome lambda function from container image"
+  function_name = "${random_pet.load_lambda.id}-lambda-from-container-image"
+  description   = "Extracts forecast data from iso_ne api"
 
   create_package = false
   timeout        = 300
@@ -202,7 +194,7 @@ module "lambda_function_from_container_image" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image.image_uri
+  image_uri     = module.docker_image_extract_forecast.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -215,7 +207,7 @@ module "lambda_function_from_container_image" {
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_internet.security_group_id]
   attach_network_policy  = true
 
   attach_policies = true
@@ -226,11 +218,47 @@ module "lambda_function_from_container_image" {
   number_of_policies = 2
 }
 
-module "docker_image" {
+module "iso_ne_extract_forecast_lambda" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.forecast_lambda.id}-lambda-from-container-image"
+  description   = "Extracts load data from iso_ne api"
+
+  create_package = false
+  timeout        = 300
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_extract_load.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  environment_variables = {
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
+    ISO_NE_AUTH = var.iso_ne_auth
+  }
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_postgresdb.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+  ]
+  number_of_policies = 2
+}
+
+module "docker_image_extract_load" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.this.id
+  ecr_repo        = random_pet.load_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -249,11 +277,42 @@ module "docker_image" {
   })
 
   image_tag   = "2.0"
-  source_path = "./scrapers/"
+  source_path = "./scrapers/extract_load"
   platform    = "linux/amd64"
 }
 
-resource "random_pet" "this" {
+module "docker_image_extract_forecast" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.forecast_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./scrapers/extract_forecast"
+  platform    = "linux/amd64"
+}
+
+resource "random_pet" "load_lambda" {
+  length = 2
+}
+
+resource "random_pet" "forecast_lambda" {
   length = 2
 }
 
@@ -288,4 +347,31 @@ resource "random_pet" "this" {
 #  when = destroy
 #  command = 
 #}
+#}
+#module "eventbridge" {
+#  source  = "terraform-aws-modules/eventbridge/aws"
+#  version = "1.17.2"
+
+#  create_bus = false
+
+#  rules = {
+#    crons = {
+#      description = "daily lambda trigger"
+#      schedule_expression = "cron(0 18 * * ? *)"
+#      input = jsonencode({
+#        "request_type": "forecast",
+#        "date_begin": "",
+#        "date_end": ""
+#      })
+#    }
+#  }
+
+#  targets = {
+#    crons = [
+#      {
+#        name = "iso_ne_daily_request"
+#        arn = module.lambda_function_from_container_image.lambda_function_arn
+#      }
+#    ]
+#  }
 #}
