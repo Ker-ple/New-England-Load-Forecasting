@@ -207,7 +207,7 @@ module "iso_ne_extract_load_lambda" {
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_internet.security_group_id]
+  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_postgresdb.security_group_id]
   attach_network_policy  = true
 
   attach_policies = true
