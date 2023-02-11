@@ -58,14 +58,14 @@ module "security_group_ec2_internet" {
 
   vpc_id      = module.vpc.vpc_id
   name        = "grafana_sg"
-  description = "Security group for allowing access to grafana from the internet"
+  description = "Security group for the ec2 instance hosting grafana"
 
   ingress_with_cidr_blocks = [
     {
       from_port   = 3000
       to_port     = 3000
       protocol    = "tcp"
-      description = "Access grafana from the internet"
+      description = "Access grafana hosted on ec2 from the internet"
       cidr_blocks = "0.0.0.0/0"
     },
     {
@@ -95,34 +95,66 @@ module "security_group_ec2_internet" {
     {
       rule = "https-443-tcp"
       cidr_blocks = "0.0.0.0/0"
-    },
-    {
-      rule = "grafana-tcp"
-      cidr_blocks = "0.0.0.0/0"
-    }
+    }#,
+    #{
+    #  rule = "grafana-tcp"
+    #  cidr_blocks = "0.0.0.0/0"
+    #}
   ]
 }
 
-module "security_group_ec2_postgresdb" {
+module "security_group_db_ingestion" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 4.5.0"
 
   vpc_id      = module.vpc.vpc_id
   name        = "ec2-postgres_sg"
-  description = "Security group allowing connections between the grafana ec2 and the postgres db"
+  description = "Security group allowing allowing the db to receive data from lambda and connect to ec2"
 
   computed_ingress_with_source_security_group_id = [
     {
       rule                     = "postgresql-tcp"
       source_security_group_id = module.security_group_ec2_internet.security_group_id
+    },
+    {
+      rule                     = "postgresql-tcp"
+      source_security_group_id = module.security_group_lambdas.security_group_id
     }
   ]
-  number_of_computed_ingress_with_source_security_group_id = 1
+  number_of_computed_ingress_with_source_security_group_id = 2
 
   computed_egress_with_source_security_group_id = [
     {
       rule = "postgresql-tcp"
       source_security_group_id = module.security_group_ec2_internet.security_group_id
+    }
+  ]
+  number_of_computed_egress_with_source_security_group_id = 1
+}
+
+module "security_group_lambdas" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 4.5.0"
+
+  vpc_id      = module.vpc.vpc_id
+  name        = "ec2-postgres_sg"
+  description = "Security group for lambdas to access internet and RDS"
+
+  egress_with_cidr_blocks = [
+    {
+      rule = "https-443-tcp"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      rule = "http-80-tcp"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
+  computed_egress_with_source_security_group_id = [
+    {
+      rule = "postgresql-tcp"
+      source_security_group_id = module.security_group_db_ingestion.security_group_id
     }
   ]
   number_of_computed_egress_with_source_security_group_id = 1
@@ -147,7 +179,7 @@ module "ec2_instance" {
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)
-  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id, module.security_group_ec2_postgresdb.security_group_id]
+  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id, module.security_group_db_ingestion.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
   associate_public_ip_address = true
 
@@ -179,10 +211,10 @@ module "rds" {
 
   availability_zone      = element(module.vpc.azs, 0)
   db_subnet_group_name   = module.vpc.database_subnet_group_name
-  vpc_security_group_ids = [module.security_group_ec2_postgresdb.security_group_id]
+  vpc_security_group_ids = [module.security_group_db_ingestion.security_group_id]
 }
 
-module "iso_ne_extract_load_lambda" {
+module "iso_ne_extract_forecast_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.load_lambda.id}-lambda-from-container-image"
@@ -207,7 +239,7 @@ module "iso_ne_extract_load_lambda" {
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_postgresdb.security_group_id]
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
   attach_network_policy  = true
 
   attach_policies = true
@@ -218,7 +250,7 @@ module "iso_ne_extract_load_lambda" {
   number_of_policies = 2
 }
 
-module "iso_ne_extract_forecast_lambda" {
+module "iso_ne_extract_load_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.forecast_lambda.id}-lambda-from-container-image"
@@ -243,7 +275,7 @@ module "iso_ne_extract_forecast_lambda" {
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id, module.security_group_ec2_postgresdb.security_group_id]
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
   attach_network_policy  = true
 
   attach_policies = true
