@@ -52,7 +52,7 @@ module "vpc" {
   one_nat_gateway_per_az = false
 }
 
-module "security_group_ec2_internet" {
+module "security_group_ec2" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 4.5.0"
 
@@ -101,6 +101,14 @@ module "security_group_ec2_internet" {
     #  cidr_blocks = "0.0.0.0/0"
     #}
   ]
+  computed_egress_with_source_security_group_id = [
+    {
+      rule = "postgresql-tcp"
+      source_security_group_id = module.security_group_db_ingestion.security_group_id
+    }
+  ]
+
+  number_of_computed_egress_with_source_security_group_id = 1
 }
 
 module "security_group_db_ingestion" {
@@ -114,7 +122,7 @@ module "security_group_db_ingestion" {
   computed_ingress_with_source_security_group_id = [
     {
       rule                     = "postgresql-tcp"
-      source_security_group_id = module.security_group_ec2_internet.security_group_id
+      source_security_group_id = module.security_group_ec2.security_group_id
     },
     {
       rule                     = "postgresql-tcp"
@@ -126,7 +134,7 @@ module "security_group_db_ingestion" {
   computed_egress_with_source_security_group_id = [
     {
       rule = "postgresql-tcp"
-      source_security_group_id = module.security_group_ec2_internet.security_group_id
+      source_security_group_id = module.security_group_ec2.security_group_id
     }
   ]
   number_of_computed_egress_with_source_security_group_id = 1
@@ -179,7 +187,7 @@ module "ec2_instance" {
   instance_type               = "t2.micro"
   key_name                    = "key_1"
   availability_zone           = element(module.vpc.azs, 0)
-  vpc_security_group_ids      = [module.security_group_ec2_internet.security_group_id, module.security_group_db_ingestion.security_group_id]
+  vpc_security_group_ids      = [module.security_group_ec2.security_group_id, module.security_group_db_ingestion.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
   associate_public_ip_address = true
 
