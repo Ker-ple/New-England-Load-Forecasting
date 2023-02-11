@@ -33,18 +33,24 @@ def lambda_handler(event, context):
     final_df = final_df.astype({'actual_load_mw': 'int16', 'native_load_mw': 'int16'})
     final_json = final_df.to_dict('records')
     DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
+        load_id SERIAL PRIMARY KEY,
         load_datetime TIMESTAMP WITH TIME ZONE,
         actual_load_mw INTEGER, 
         forecast_load_mw INTEGER,
-        native_load_mw INTEGER
-        )"""
+        native_load_mw INTEGER,
+        UNIQUE(load_datetime)
+        );"""
     conn.run(DDL)
     print('created iso_ne_load table')
     table = 'iso_ne_load'
     for row in final_json:
         cols = ', '.join(f'"{k}"' for k in row.keys())   
         vals = ', '.join(f':{k}' for k in row.keys()) 
-        stmt = f"""INSERT INTO "{table}" ({cols}) VALUES ({vals})"""
+        stmt = f"""INSERT INTO "{table}" ({cols}) VALUES ({vals}) 
+                    ON CONFLICT (load_datetime) 
+                    DO UPDATE SET 
+                    actual_load_mw = EXCLUDED.actual_load_mw 
+                    , native_load_mw = EXCLUDED.native_load_mw ;"""
         conn.run(stmt, **row)
     print('uploaded load data')
 
