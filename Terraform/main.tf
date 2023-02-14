@@ -203,7 +203,7 @@ module "rds" {
 
   identifier = "testdb"
 
-  deletion_protection    = false
+  deletion_protection    = true
   engine                 = "postgres"
   engine_version         = "14.6"
   instance_class         = "db.t3.micro"
@@ -401,7 +401,7 @@ module "dynamodb-table" {
   ttl_enabled = true
   stream_enabled = true
   ttl_attribute_name = "lambda_invoke_timestamp"
-  stream_view_type = "OLD_IMAGE"
+  stream_view_type = "NEW_AND_OLD_IMAGES"
 }
 
 #resource "aws_instance" "dev_node" {

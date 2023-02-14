@@ -55,11 +55,11 @@ def lambda_handler(event, context):
         );"""
     conn.run(DDL)
     print('created iso_ne_load table')
-    table = 'iso_ne_load'
+    rds_table = 'iso_ne_load'
     for row in final_json:
         cols = ', '.join(f'"{k}"' for k in row.keys())   
         vals = ', '.join(f':{k}' for k in row.keys()) 
-        stmt = f"""INSERT INTO "{table}" ({cols}) VALUES ({vals}) 
+        stmt = f"""INSERT INTO "{rds_table}" ({cols}) VALUES ({vals}) 
                     ON CONFLICT (load_datetime) 
                     DO UPDATE SET 
                     forecast_load_mw = EXCLUDED.forecast_load_mw ;"""
@@ -92,14 +92,15 @@ def lambda_handler(event, context):
         'new_lambda_invoke_time': new_lambda_invoke_time,
         'new_request_date_begin': new_request_date_begin,
         'new_request_date_end': new_request_date_end
-        }
+        },
+        default=str
     )
         
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
 def extract_date_from_timestamp(timestamp, gmt_offset=-5):
-    return datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=gmt_offset))).strftime('%Y-%m-%d')
+    return datetime.fromtimestamp(timestamp, tz=timezone(timedelta(hours=gmt_offset))).strftime('%Y-%m-%d')
 
 def ddb_deserialize(r, type_deserializer = TypeDeserializer()):
     return type_deserializer.deserialize({"M": r})
