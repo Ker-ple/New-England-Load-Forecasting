@@ -253,9 +253,11 @@ module "iso_ne_extract_forecast_lambda" {
   attach_policies = true
   policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
-  number_of_policies = 2
+  number_of_policies = 4
 }
 
 module "iso_ne_extract_load_lambda" {
@@ -289,9 +291,11 @@ module "iso_ne_extract_load_lambda" {
   attach_policies = true
   policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
-  number_of_policies = 2
+  number_of_policies = 4
 }
 
 module "docker_image_extract_load" {
@@ -356,7 +360,49 @@ resource "random_pet" "forecast_lambda" {
   length = 2
 }
 
+module "dynamodb-table" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "3.1.2"
 
+  name        = "lambda_params"
+  hash_key    = "function_name"
+  range_key   = "lambda_invoke_timestamp"
+  table_class = "STANDARD"
+
+  attributes = [
+    {
+      name = "function_name"
+      type = "S"
+    },
+    {
+      name = "lambda_invoke_timestamp"
+      type = "N"
+    },
+    {
+      name = "request_date_begin"
+      type = "N"
+    },
+    {
+      name = "request_date_end"
+      type = "N"
+    }
+  ]
+
+  global_secondary_indexes = [
+  {
+    name               = "TimestampStartIndex"
+    hash_key           = "request_date_begin"
+    range_key          = "request_date_end"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["function_name","lambda_invoke_timestamp"]
+  }
+]
+
+  ttl_enabled = true
+  stream_enabled = true
+  ttl_attribute_name = "lambda_invoke_timestamp"
+  stream_view_type = "OLD_IMAGE"
+}
 
 #resource "aws_instance" "dev_node" {
 #  instance_type          = "t2.micro"
