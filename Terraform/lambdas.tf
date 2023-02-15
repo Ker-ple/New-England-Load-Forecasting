@@ -21,7 +21,7 @@ module "iso_ne_extract_forecast_lambda" {
     DB_USERNAME = var.db_username
     DB_NAME     = var.db_name
     ISO_NE_AUTH = var.iso_ne_auth
-    ISO_NE_API = var.iso_ne_api
+    ISO_NE_API  = var.iso_ne_api
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -61,7 +61,7 @@ module "iso_ne_extract_load_lambda" {
     DB_USERNAME = var.db_username
     DB_NAME     = var.db_name
     ISO_NE_AUTH = var.iso_ne_auth
-    ISO_NE_API = var.iso_ne_api
+    ISO_NE_API  = var.iso_ne_api
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -127,13 +127,13 @@ module "extract_weather_lambda" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME         = module.rds.db_instance_address
+    DB_PASSWORD         = var.db_password
+    DB_USERNAME         = var.db_username
+    DB_NAME             = var.db_name
     PIRATE_FORECAST_API = var.pirate_forecast_api
-    TIME_MACHINE_API = var.time_machine_api
-    WEATHER_AUTH = var.weather_apis_auth
+    TIME_MACHINE_API    = var.time_machine_api
+    WEATHER_AUTH        = var.weather_apis_auth
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets

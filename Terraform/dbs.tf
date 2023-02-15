@@ -24,8 +24,8 @@ module "rds" {
 
 module "dynamodb-table" {
   create_table = false
-  source  = "terraform-aws-modules/dynamodb-table/aws"
-  version = "3.1.2"
+  source       = "terraform-aws-modules/dynamodb-table/aws"
+  version      = "3.1.2"
 
   name        = "lambda_params"
   hash_key    = "function_name"
