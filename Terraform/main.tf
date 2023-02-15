@@ -7,30 +7,19 @@ locals {
   ca-certificates \
   curl \
   gnupg-agent \
-  software-properties-common
-  echo \
-  "[grafana]
-  name=grafana
-  baseurl=https://packages.grafana.com/oss/rpm
-  repo_gpgcheck=1
-  enabled=1
-  gpgcheck=1
-  gpgkey=https://packages.grafana.com/gpg.key
-  sslverify=1
-  sslcacert=/etc/pki/tls/certs/ca-bundle.crt" >> /etc/yum.repos.d/grafana.repo
-  sudo yum install grafana -y
-  sudo systemctl daemon-reload
-  sudo systemctl start grafana-server
-  sudo systemctl status grafana-server
-  sudo systemctl enable grafana-server.service
+  software-properties-common \
+  docker
+  sudo service docker start 
+  sudo docker run -d --name=grafana -p 443:3000 grafana/grafana-oss
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
+
   EOT
 }
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
-  name = "project_vpc"
+  name   = "project_vpc"
 
   cidr = "10.1.0.0/18"
   azs  = ["us-east-1a", "us-east-1b"]
@@ -93,9 +82,9 @@ module "security_group_ec2" {
 
   egress_with_cidr_blocks = [
     {
-      rule = "https-443-tcp"
+      rule        = "https-443-tcp"
       cidr_blocks = "0.0.0.0/0"
-    }#,
+    } #,
     #{
     #  rule = "grafana-tcp"
     #  cidr_blocks = "0.0.0.0/0"
@@ -103,7 +92,7 @@ module "security_group_ec2" {
   ]
   computed_egress_with_source_security_group_id = [
     {
-      rule = "postgresql-tcp"
+      rule                     = "postgresql-tcp"
       source_security_group_id = module.security_group_db_ingestion.security_group_id
     }
   ]
@@ -133,7 +122,7 @@ module "security_group_db_ingestion" {
 
   computed_egress_with_source_security_group_id = [
     {
-      rule = "postgresql-tcp"
+      rule                     = "postgresql-tcp"
       source_security_group_id = module.security_group_ec2.security_group_id
     }
   ]
@@ -150,18 +139,18 @@ module "security_group_lambdas" {
 
   egress_with_cidr_blocks = [
     {
-      rule = "https-443-tcp"
+      rule        = "https-443-tcp"
       cidr_blocks = "0.0.0.0/0"
     },
     {
-      rule = "http-80-tcp"
+      rule        = "http-80-tcp"
       cidr_blocks = "0.0.0.0/0"
     }
   ]
 
   computed_egress_with_source_security_group_id = [
     {
-      rule = "postgresql-tcp"
+      rule                     = "postgresql-tcp"
       source_security_group_id = module.security_group_db_ingestion.security_group_id
     }
   ]
@@ -228,6 +217,7 @@ module "iso_ne_extract_forecast_lambda" {
   function_name = "${random_pet.load_lambda.id}-lambda-from-container-image"
   description   = "Extracts forecast data from iso_ne api"
 
+  publish        = true
   create_package = false
   timeout        = 300
 
@@ -258,6 +248,13 @@ module "iso_ne_extract_forecast_lambda" {
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
   number_of_policies = 4
+
+  allowed_triggers = {
+    TTLRule = {
+      principal  = "dynamodb.amazonaws.com"
+      source_arn = module.dynamodb-table.dynamodb_table_arn
+    }
+  }
 }
 
 module "iso_ne_extract_load_lambda" {
@@ -267,6 +264,7 @@ module "iso_ne_extract_load_lambda" {
   description   = "Extracts load data from iso_ne api"
 
   create_package = false
+  publish        = true
   timeout        = 300
 
   ##################
@@ -296,6 +294,13 @@ module "iso_ne_extract_load_lambda" {
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
   number_of_policies = 4
+
+  allowed_triggers = {
+    TTLRule = {
+      principal  = "dynamodb.amazonaws.com"
+      source_arn = module.dynamodb-table.dynamodb_table_arn
+    }
+  }
 }
 
 module "docker_image_extract_load" {
@@ -389,75 +394,17 @@ module "dynamodb-table" {
   ]
 
   global_secondary_indexes = [
-  {
-    name               = "TimestampStartIndex"
-    hash_key           = "request_date_begin"
-    range_key          = "request_date_end"
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["function_name","lambda_invoke_timestamp"]
-  }
-]
+    {
+      name               = "TimestampStartIndex"
+      hash_key           = "request_date_begin"
+      range_key          = "request_date_end"
+      projection_type    = "INCLUDE"
+      non_key_attributes = ["function_name", "lambda_invoke_timestamp"]
+    }
+  ]
 
-  ttl_enabled = true
-  stream_enabled = true
+  ttl_enabled        = true
+  stream_enabled     = true
   ttl_attribute_name = "lambda_invoke_timestamp"
-  stream_view_type = "NEW_AND_OLD_IMAGES"
+  stream_view_type   = "OLD_IMAGE"
 }
-
-#resource "aws_instance" "dev_node" {
-#  instance_type          = "t2.micro"
-#  ami                    = data.aws_ami.server_ami.id
-#  key_name               = aws_key_pair.mtc_auth.id
-#  vpc_security_group_ids = [aws_security_group.mtc_sg.id]
-#  subnet_id              = aws_subnet.mtc_public_subnet.id
-#  user_data = file("userdata.tpl")
-
-#  root_block_device {
-#    volume_size = 10
-#  }
-
-#  tags = {
-#    Name = "dev-node"
-#  }
-
-#provisioner "local-exec" {
-#  command = templatefile("${var.host_os}-ssh-config.tpl", {
-#      hostname = self.public_ip,
-#      user = "ubuntu",
-#      identityfile = "~/.ssh/mtckey"
-#  })
-#  interpreter = var.host_os == "windows" ? ["Powershell", "-Command"] : ["bash", "-c"]
-#}
-
-#provisioner "local-exec" {
-#  when = destroy
-#  command = 
-#}
-#}
-#module "eventbridge" {
-#  source  = "terraform-aws-modules/eventbridge/aws"
-#  version = "1.17.2"
-
-#  create_bus = false
-
-#  rules = {
-#    crons = {
-#      description = "daily lambda trigger"
-#      schedule_expression = "cron(0 18 * * ? *)"
-#      input = jsonencode({
-#        "request_type": "forecast",
-#        "date_begin": "",
-#        "date_end": ""
-#      })
-#    }
-#  }
-
-#  targets = {
-#    crons = [
-#      {
-#        name = "iso_ne_daily_request"
-#        arn = module.lambda_function_from_container_image.lambda_function_arn
-#      }
-#    ]
-#  }
-#}
