@@ -3,6 +3,8 @@ import pandas as pd
 import json
 from datetime import datetime
 
+# We're requesting only hourly data, and in the case of forecasts, 168 hours into the future.
+
 def get_weather(latitude, longitude, timestamp):
     is_historic = timestamp < datetime.now().timestamp()
     if is_historic:

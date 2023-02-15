@@ -9,14 +9,6 @@ from boto3.dynamodb.types import TypeDeserializer
 
 def lambda_handler(event, context):
     print(event)
-    #dynamodb = boto3.resource('dynamodb')
-    #table = dynamodb.Table('lambda_params')
-    #print('DynamoDB table set.')
-
-    #print(event['Records'])
-
-    #pertinent_info = [ ddb_deserialize(r["dynamodb"]["OldImage"]) for r in event['Records'] ]
-    #keys = [ ddb_deserialize(r["dynamodb"]["Keys"]) for r in event['Records'] ]
 
     conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
@@ -29,17 +21,16 @@ def lambda_handler(event, context):
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
-    #date_begin = extract_date_from_timestamp(pertinent_info[0]['request_date_begin'])
-    #date_end = extract_date_from_timestamp(pertinent_info[0]['request_date_end'])
-
     date_range = define_yyyymmdd_date_range(event['date_begin'], event['date_end'])
-    
+
+    # requests historical load forecast data for each YYYYMMDD date, then concats the results into a tall dataframe
     resp_list = list()
     for date in date_range:
         resp_list.append(httpx.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', headers=auth, timeout=None).json())
     df_list = [pd.json_normalize(json['HourlyLoadForecasts']['HourlyLoadForecast'], sep='_') for json in resp_list]
     final_df = pd.concat(df_list, ignore_index=True, axis=0)
 
+    # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
     final_df = final_df[['BeginDate', 'LoadMw']]
     final_df.rename({'LoadMw': 'forecast_load_mw', 'BeginDate': 'load_datetime'}, axis=1, inplace=True)
     final_df = final_df.round({'forecast_load_mw': 0})
@@ -68,6 +59,7 @@ def lambda_handler(event, context):
 
     conn.close()
 
+    # a success returns the .py file name and the first and last data point
     return json.dumps({
         'response': 200,
         'script_name': os.path.basename(__file__),
@@ -76,39 +68,5 @@ def lambda_handler(event, context):
         'last_data_point': final_json[-1]
     })
 
-    #script_name = os.path.basename(__file__)
-
-    #new_lambda_invoke_time = keys[0]['lambda_invoke_timestamp']+86401
-    #new_request_date_begin = pertinent_info[0]['request_date_begin']+1
-    #new_request_date_end = pertinent_info[0]['request_date_end']+1
-
-    #table.put_item(
-    #    Item={
-    #        'function_name': script_name,
-    #        'lambda_invoke_timestamp': new_lambda_invoke_time,
-    #        'request_date_begin': new_request_date_begin,
-    #        'request_date_end': new_request_date_end
-    #    }
-    #)
-
-    #return json.dumps({
-    #    'response': 200,
-    #    'script_name': script_name,
-    #    'message': 'data successfully sent to postgres',
-    #    'first_data_point': final_json[0],
-    #    'last_data_point': final_json[-1],
-    #    'new_lambda_invoke_time': new_lambda_invoke_time,
-    #    'new_request_date_begin': new_request_date_begin,
-    #    'new_request_date_end': new_request_date_end
-    #    },
-    #    default=str
-    #)
-        
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
-
-#def extract_date_from_timestamp(timestamp, gmt_offset=-5):
-#    return datetime.fromtimestamp(timestamp, tz=timezone(timedelta(hours=gmt_offset))).strftime('%Y-%m-%d')
-
-#def ddb_deserialize(r, type_deserializer = TypeDeserializer()):
-#    return type_deserializer.deserialize({"M": r})
