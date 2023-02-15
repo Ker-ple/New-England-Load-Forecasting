@@ -123,20 +123,20 @@ module "step-functions" {
 
   service_integrations = {
 
-    lambdas = {
-      weather_lambda = [
+    lambda = {
+      lambda = [
         module.extract_weather_lambda.lambda_function_arn, "arn:aws:lambda:us-east-1:485809471371:function:adapting-octopus-lambda-from-container-image"
       ]
 
-      load_lambda = [
+      lambda = [
         module.iso_ne_extract_load_lambda.lambda_function_arn, "arn:aws:lambda:us-east-1:485809471371:function:loved-stingray-lambda-from-container-image"
       ]
 
-      forecast_lambda = [
+      lambda = [
         module.iso_ne_extract_forecast_lambda.lambda_function_arn, "arn:aws:lambda:us-east-1:485809471371:function:pure-crab-lambda-from-container-image"
       ]
 
-      split_date_lambda = [
+      lambda = [
         module.date_split_lambda.lambda_function_arn, "arn:aws:lambda:us-east-1:485809471371:function:coherent-oriole-lambda-from-container-image"
       ]
     }
