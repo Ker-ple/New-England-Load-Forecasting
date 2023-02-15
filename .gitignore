@@ -1,0 +1,12 @@
+.terraform**
+terraform.tf**
+userdata.tpl
+windows-ssh-config.tpl
+outputs.tf.txt
+random.txt
+secrets.tfvars.txt
+variables.tf
+old_userdata.txt
+Terraform/set_up*
+Terraform/tear_*
+test.py
