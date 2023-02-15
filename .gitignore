@@ -7,6 +7,6 @@ random.txt
 secrets.tfvars.txt
 variables.tf
 old_userdata.txt
-Terraform/set_*
+Terraform/set_up*
 Terraform/tear_*
 test.py
