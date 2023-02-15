@@ -32,7 +32,7 @@ def lambda_handler(event, context):
     #date_begin = extract_date_from_timestamp(pertinent_info[0]['request_date_begin'])
     #date_end = extract_date_from_timestamp(pertinent_info[0]['request_date_end'])
 
-    date_range = define_yyyymmdd_date_range(event['Payload']['date_begin'], event['Payload']['date_end'])
+    date_range = define_yyyymmdd_date_range(event['date_begin'], event['date_end'])
     
     resp_list = list()
     for date in date_range:

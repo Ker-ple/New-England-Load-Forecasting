@@ -6,7 +6,7 @@ module "iso_ne_extract_forecast_lambda" {
 
   publish        = true
   create_package = false
-  timeout        = 300
+  timeout        = 600
 
   ##################
   # Container Image
@@ -46,7 +46,7 @@ module "iso_ne_extract_load_lambda" {
 
   create_package = false
   publish        = true
-  timeout        = 300
+  timeout        = 600
 
   ##################
   # Container Image
@@ -86,7 +86,7 @@ module "date_split_lambda" {
 
   create_package = false
   publish        = true
-  timeout        = 300
+  timeout        = 600
 
   ##################
   # Container Image
@@ -117,7 +117,7 @@ module "extract_weather_lambda" {
 
   create_package = false
   publish        = true
-  timeout        = 300
+  timeout        = 600
 
   ##################
   # Container Image
