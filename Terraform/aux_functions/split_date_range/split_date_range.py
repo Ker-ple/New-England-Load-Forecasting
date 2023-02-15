@@ -3,7 +3,8 @@ import numpy as np
 import math
 
 def lambda_handler(event, context=None):
-    dates = define_yyyymmdd_date_range(event['start_date'], event['end_date'])
+    print(event)
+    dates = define_yyyymmdd_date_range(event['date_begin'], event['date_end'])
     # a new lambda function is invoked every 30 dates in consideration. each lambda is given equal share of dates to scrape.
     num_lambdas = math.ceil(len(dates)/30)
     # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
