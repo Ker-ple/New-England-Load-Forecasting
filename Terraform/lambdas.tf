@@ -109,7 +109,7 @@ module "date_split_lambda" {
   number_of_policies = 4
 }
 
-module "extract_weather_lambda" {
+module "extract_weather_forecast_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.weather_lambda.id}-lambda-from-container-image"
@@ -132,7 +132,6 @@ module "extract_weather_lambda" {
     DB_USERNAME         = var.db_username
     DB_NAME             = var.db_name
     PIRATE_FORECAST_API = var.pirate_forecast_api
-    TIME_MACHINE_API    = var.time_machine_api
     WEATHER_AUTH        = var.weather_apis_auth
   }
 

@@ -21,7 +21,7 @@ module "docker_image_extract_load" {
   })
 
   image_tag   = "2.0"
-  source_path = "./scrapers/extract_load"
+  source_path = "./scrapers/extract_grid_load"
   platform    = "linux/amd64"
 }
 
@@ -48,7 +48,7 @@ module "docker_image_extract_forecast" {
   })
 
   image_tag   = "2.0"
-  source_path = "./scrapers/extract_forecast"
+  source_path = "./scrapers/extract_grid_forecast"
   platform    = "linux/amd64"
 }
 
@@ -102,6 +102,6 @@ module "docker_image_extract_weather" {
   })
 
   image_tag   = "2.0"
-  source_path = "./scrapers/extract_weather"
+  source_path = "./scrapers/extract_weather_forecast"
   platform    = "linux/amd64"
 }
