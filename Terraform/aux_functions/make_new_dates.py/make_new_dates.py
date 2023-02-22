@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
+import json
 
-def lambda_handler(event, context=None):
+def lambda_handler(event, context):
+
+    # This function makes new dates for both iso_ne and uscrn scrapers.
+
     print(event)
 
     old_date_end = datetime.strptime(event['date_end'], '%Y%m%d')

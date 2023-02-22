@@ -35,7 +35,7 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
     
-    data = read_uscrn(event['uscrn_station_url'], event['date_start'], event['date_end'], event['filter_cols'])
+    data = read_uscrn(event['uscrn_station_url'], event['date_begin'], event['date_end'], event['filter_cols'])
     data_json = data.to_dict('records')
 
     for row in data_json:
@@ -53,5 +53,8 @@ def lambda_handler(event, context):
         'script_name': os.path.basename(__file__),
         'message': 'data sent to postgres',
         'first_data_point': data_json[0],
-        'last_data_point': data_json[-1]
+        'last_data_point': data_json[-1],
+        'date_start': event['date_start'],
+        'date_end': event['date_end'],
+        'filter_cols': event['filter_cols']
     })
