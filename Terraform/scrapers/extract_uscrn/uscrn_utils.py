@@ -53,8 +53,6 @@ DTYPES = [
     'float64', 'float64', 'float64', 'float64', 'float64', 'float64'
 ]
 
-filter_cols = ['station_id', 'temp_air_avg_hr', 'ppt_total', 'rel_humidity_avg_hr']
-
 station_id_name_dict = {
     54794: 'NH_Durham_N',
     54795: 'NH_Durham_SSW',
@@ -86,6 +84,7 @@ def read_uscrn(filename, start_date=None, end_date=None, filter_cols=None):
         data = data.where(data != val, np.nan)
 
     data = data.rename(columns=VARIABLE_MAP)
+    filter_cols.append('station_id')
     data = data[filter_cols]
     data = data[start_date:end_date]
     data.reset_index(inplace=True)

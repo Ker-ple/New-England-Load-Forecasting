@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import os
 import pg8000.native
-from datetime import datetime
 
 conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
@@ -30,7 +29,7 @@ def lambda_handler(event, context):
     api_key = os.environ.get('WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
-    data = get_data(event['latitude'], event['longitude'], base_url, api_key)    
+    data = get_data(event['latitude'], event['longitude'], base_url=base_url, api_key=api_key, event['variables_map'])    
     data_json = data.to_dict('records')
 
     for row in data_json:
@@ -51,15 +50,23 @@ def lambda_handler(event, context):
         'last_data_point': data_json[-1]
     })
 
-def get_data(latitude, longitude, base_url, api_key):
+def get_data(latitude, longitude, base_url, api_key, **kwargs):
+    default_map = {
+        'temperature': 'avg_air_temp_hr',
+        'apparentTemperature': 'feels_like_temp',
+        'humidity': 'rel_humidity_avg_hr',
+        'precipAccumulation': 'ppt_total'}
+    variables_map = kwargs.get('variables_map', default_map)
     raw_data = get_forecast_weather(latitude, longitude, base_url, api_key)
-    data = extract_forecast_weather(raw_data)
+    data = extract_forecast_weather(raw_data, variables_map)
     return data
 
 def get_forecast_weather(latitude, longitude, base_url, api_key):
     resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly', timeout=None)
     return resp.text
 
-def extract_forecast_weather(raw_weather_data):
+def extract_forecast_weather(raw_weather_data, variables_map):
     data = pd.json_normalize(json.loads(raw_weather_data)['hourly']['data'])
+    data = data[variables_map.keys()]
+    data.rename(columns=variables_map)
     return data
