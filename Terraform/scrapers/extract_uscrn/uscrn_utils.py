@@ -60,7 +60,14 @@ station_id_name_dict = {
     54797: 'RI_Kingston_W'   
 }
 
-def read_uscrn(filename, start_date=None, end_date=None, filter_cols=None):
+def read_uscrn(filename, start_date=None, end_date=None, **kwargs):
+    default_vars_map = {
+        'T_HR_AVG': 'air_temp_avg_hr',
+        'P_CALC': 'ppt_total',
+        'RH_HR_AVG': 'relative_humidity_avg'
+        }
+    variables_map = kwargs.get('variables_map', default_vars_map)
+
     data = pd.read_fwf(filename, header=None, names=HEADERS.split(' '),
                        widths=WIDTHS, dtype=dict(zip(HEADERS.split(' '), DTYPES)))
     # set index
@@ -83,14 +90,21 @@ def read_uscrn(filename, start_date=None, end_date=None, filter_cols=None):
         # consider replacing with .replace([-99, -999, -9999])
         data = data.where(data != val, np.nan)
 
-    data = data.rename(columns=VARIABLE_MAP)
-    filter_cols.append('station_id')
-    data = data[filter_cols]
+    # The following lines do the following:
+    # 1. get the station name.
+    # 2. filter those columns, as defined in the variables_map kwarg keys.
+    # 3. rename those columns, as defined in the variables map kwarg values.
+    # 4. filter rows according to start and end date argument.
+    # 5. add weather_datetime as a column.
+    # 6. prepend each column except weather_datetime with the name of the station.
+
+    station_name = station_id_name_dict[data.loc[0,'station_id']]
+    data = data[variables_map.keys()]
+    data.rename(columns=variables_map, inplace=True)
     data = data[start_date:end_date]
     data.reset_index(inplace=True)
-    data.rename({'index': 'utc_datetime'}, axis=1, inplace=True)
-    station_name = station_id_name_dict[data.loc[0,'station_id']]
-    data = data.rename(columns={c: c+'_'+station_name for c in data.columns if c not in ['weather_datetime', 'station_id']})
-    data.drop('station_id', axis=1, inplace=True)
+    data.rename({'index': 'weather_datetime'}, axis=1, inplace=True)
+    
+    data = data.rename(columns={c: c+'_'+station_name for c in data.columns if c not in ['weather_datetime']})
 
     return data

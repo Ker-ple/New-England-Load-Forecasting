@@ -4,6 +4,6 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-COPY config_dates.py ${LAMBDA_TASK_ROOT}
+COPY split_date_range.py ${LAMBDA_TASK_ROOT}
 
-CMD [ "config.lambda_handler" ]
+CMD [ "split_date_range.lambda_handler" ]

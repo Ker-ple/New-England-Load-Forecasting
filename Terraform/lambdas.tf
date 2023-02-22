@@ -78,7 +78,7 @@ module "iso_ne_extract_load_lambda" {
   number_of_policies = 4
 }
 
-module "date_split_lambda" {
+module "split_date_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.date_split_lambda.id}-lambda-from-container-image"
@@ -91,7 +91,7 @@ module "date_split_lambda" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_date_split.image_uri
+  image_uri     = module.docker_image_split_date.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -109,10 +109,10 @@ module "date_split_lambda" {
   number_of_policies = 4
 }
 
-module "extract_weather_forecast_lambda" {
+module "extract_uscrn_lambda" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.weather_lambda.id}-lambda-from-container-image"
+  function_name = "${random_pet.uscrn_lambda.id}-lambda-from-container-image"
   description   = "Extracts forecasted and historic weather data via pirate weather api"
 
   create_package = false
@@ -122,7 +122,7 @@ module "extract_weather_forecast_lambda" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_extract_weather.image_uri
+  image_uri     = module.docker_image_extract_uscrn.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 

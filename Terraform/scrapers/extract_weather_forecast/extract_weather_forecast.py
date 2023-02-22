@@ -51,12 +51,13 @@ def lambda_handler(event, context):
     })
 
 def get_data(latitude, longitude, base_url, api_key, **kwargs):
-    default_map = {
+    default_vars_map = {
         'temperature': 'avg_air_temp_hr',
         'apparentTemperature': 'feels_like_temp',
         'humidity': 'rel_humidity_avg_hr',
-        'precipAccumulation': 'ppt_total'}
-    variables_map = kwargs.get('variables_map', default_map)
+        'precipAccumulation': 'ppt_total'
+        }
+    variables_map = kwargs.get('variables_map', default_vars_map)
     raw_data = get_forecast_weather(latitude, longitude, base_url, api_key)
     data = extract_forecast_weather(raw_data, variables_map)
     return data
@@ -68,5 +69,5 @@ def get_forecast_weather(latitude, longitude, base_url, api_key):
 def extract_forecast_weather(raw_weather_data, variables_map):
     data = pd.json_normalize(json.loads(raw_weather_data)['hourly']['data'])
     data = data[variables_map.keys()]
-    data.rename(columns=variables_map)
+    data.rename(columns=variables_map, inplace=True)
     return data

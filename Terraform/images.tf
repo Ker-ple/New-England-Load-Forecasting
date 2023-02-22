@@ -2,7 +2,7 @@ module "docker_image_extract_load" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.load_lambda.id
+  ecr_repo        = random_pet.iso_load_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -29,7 +29,7 @@ module "docker_image_extract_forecast" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.forecast_lambda.id
+  ecr_repo        = random_pet.iso_forecast_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -52,11 +52,11 @@ module "docker_image_extract_forecast" {
   platform    = "linux/amd64"
 }
 
-module "docker_image_date_split" {
+module "docker_image_split_date" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.date_split_lambda.id
+  ecr_repo        = random_pet.split_date_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -79,11 +79,11 @@ module "docker_image_date_split" {
   platform    = "linux/amd64"
 }
 
-module "docker_image_extract_weather" {
+module "docker_image_extract_uscrn" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.weather_lambda.id
+  ecr_repo        = random_pet.uscrn_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -102,6 +102,6 @@ module "docker_image_extract_weather" {
   })
 
   image_tag   = "2.0"
-  source_path = "./scrapers/extract_weather_forecast"
+  source_path = "./scrapers/extract_uscrn"
   platform    = "linux/amd64"
 }
