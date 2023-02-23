@@ -40,18 +40,18 @@ module "ec2_instance" {
   }
 }
 
-resource "random_pet" "load_lambda" {
+resource "random_pet" "iso_load_lambda" {
   length = 2
 }
 
-resource "random_pet" "forecast_lambda" {
+resource "random_pet" "iso_forecast_lambda" {
   length = 2
 }
 
-resource "random_pet" "date_split_lambda" {
+resource "random_pet" "split_date" {
   length = 2
 }
 
-resource "random_pet" "weather_lambda" {
+resource "random_pet" "usrcn_lambda" {
   length = 2
 }
