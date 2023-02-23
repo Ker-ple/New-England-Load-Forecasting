@@ -69,7 +69,7 @@ def get_data(start_date, end_date, base_url, auth):
 
     # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
     final_df = final_df[['BeginDate', 'LoadMw']]
-    final_df.rename({'LoadMw': 'forecast_load_mw', 'BeginDate': 'load_datetime'}, axis=1, inplace=True)
+    final_df = final_df.rename({'LoadMw': 'forecast_load_mw', 'BeginDate': 'load_datetime'}, axis=1)
     final_df = final_df.round({'forecast_load_mw': 0})
     final_df = final_df.astype({'forecast_load_mw': 'int16'})
     final_df.tz_convert('UTC')

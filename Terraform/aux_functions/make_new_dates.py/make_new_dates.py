@@ -16,5 +16,5 @@ def lambda_handler(event, context):
     return json.dumps({
         'date_begin': new_date_begin.strftime('%Y%m%d'),
         'date_end': new_date_end.strftime('%Y%m%d'),
-        'run_mode': 'repeat'
+        'run_mode': event['run_mode']
     })
