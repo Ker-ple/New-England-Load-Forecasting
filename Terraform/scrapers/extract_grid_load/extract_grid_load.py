@@ -45,13 +45,13 @@ def lambda_handler(event, context):
     print('uploaded load data')
 
     # a success returns the .py file name and the first and last data point
-    return json.dumps({
+    return {
         'response': 200,
         'script_name': os.path.basename(__file__),
         'message': 'data successfully sent to postgres',
         'first_data_point': data_json[0],
         'last_data_point': data_json[-1]
-    })
+    }
 
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]

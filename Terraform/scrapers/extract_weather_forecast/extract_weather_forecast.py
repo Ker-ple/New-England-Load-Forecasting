@@ -34,7 +34,7 @@ def lambda_handler(event, context):
     api_key = os.environ.get('PIRATE_WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
-    for record in event['records']:
+    for record in event:
 
         data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
         data_json = data.to_dict('records')
@@ -46,11 +46,11 @@ def lambda_handler(event, context):
             stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
             conn.run(stmt, **row)
 
-    return json.dumps({
+    return {
         'response': 200,
         'script_name': os.path.basename(__file__),
         'message': 'data sent to postgres'
-    })
+    }
 
 def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
@@ -67,7 +67,7 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
     return data
 
 def get_forecast_weather(latitude, longitude, base_url, api_key):
-    resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly', timeout=None)
+    resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly&units=si', timeout=None)
     return resp.text
 
 def extract_forecast_weather(raw_weather_data, forecast_area, variables_map):

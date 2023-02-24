@@ -29,7 +29,7 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
 
-    for record in event['records']:
+    for record in event:
 
         year = pd.to_datetime(record['date_begin'], format='%Y%m%d').year
 
@@ -51,11 +51,11 @@ def lambda_handler(event, context):
                 stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
                 conn.run(stmt, **row)
 
-    return json.dumps({
+    return {
         'response': 200,
         'script_name': os.path.basename(__file__),
         'message': 'data sent to postgres'
-    })
+    }
 
 def url_for_station(station_name, year):
     subhourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/{year}/CRNS0101-05-{year}-{station_name}.txt"
