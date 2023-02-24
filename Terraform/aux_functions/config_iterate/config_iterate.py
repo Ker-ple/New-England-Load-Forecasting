@@ -6,7 +6,6 @@ def lambda_handler(event, context):
     # This function makes new dates for both iso_ne and uscrn scrapers.
 
     print(event)
-    event = json.loads(event)
 
     old_date_end = datetime.strptime(event['date_end'], '%Y%m%d')
     days_delta = event['days_delta']
