@@ -1,7 +1,7 @@
-module "iso_ne_extract_forecast_lambda" {
+module "extract_grid_forecast" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.load_lambda.id}-lambda-from-container-image"
+  function_name = "${random_pet.iso_forecast_lambda.id}-lambda-from-container-image"
   description   = "Extracts forecast data from iso_ne api"
 
   publish        = true
@@ -11,7 +11,7 @@ module "iso_ne_extract_forecast_lambda" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_extract_forecast.image_uri
+  image_uri     = module.docker_image_extract_grid_forecast.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -38,10 +38,10 @@ module "iso_ne_extract_forecast_lambda" {
   number_of_policies = 4
 }
 
-module "iso_ne_extract_load_lambda" {
+module "extract_grid_load" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.forecast_lambda.id}-lambda-from-container-image"
+  function_name = "${random_pet.iso_load_lambda.id}-lambda-from-container-image"
   description   = "Extracts load data from iso_ne api"
 
   create_package = false
@@ -51,7 +51,7 @@ module "iso_ne_extract_load_lambda" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_extract_load.image_uri
+  image_uri     = module.docker_image_extract_grid_load.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -78,42 +78,11 @@ module "iso_ne_extract_load_lambda" {
   number_of_policies = 4
 }
 
-module "split_date_lambda" {
-  source = "terraform-aws-modules/lambda/aws"
-
-  function_name = "${random_pet.date_split_lambda.id}-lambda-from-container-image"
-  description   = "Splits date range into a contiguous list of smaller date ranges"
-
-  create_package = false
-  publish        = true
-  timeout        = 600
-
-  ##################
-  # Container Image
-  ##################
-  image_uri     = module.docker_image_split_date.image_uri
-  package_type  = "Image"
-  architectures = ["x86_64"]
-
-  vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
-  attach_network_policy  = true
-
-  attach_policies = true
-  policies = [
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
-    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
-  ]
-  number_of_policies = 4
-}
-
-module "extract_uscrn_lambda" {
+module "uscrn_extract_weather" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.uscrn_lambda.id}-lambda-from-container-image"
-  description   = "Extracts forecasted and historic weather data via pirate weather api"
+  description   = "Extracts historical weather data from uscrn stations."
 
   create_package = false
   publish        = true
@@ -127,13 +96,176 @@ module "extract_uscrn_lambda" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME         = module.rds.db_instance_address
-    DB_PASSWORD         = var.db_password
-    DB_USERNAME         = var.db_username
-    DB_NAME             = var.db_name
-    PIRATE_FORECAST_API = var.pirate_forecast_api
-    WEATHER_AUTH        = var.weather_apis_auth
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
   }
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+}
+
+module "pirate_extract_weather_forecasts" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.weather_forecast_lambda.id}-lambda-from-container-image"
+  description   = "Extracts weather forecasts via PirateWeather API."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_extract_weather_forecast.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  environment_variables = {
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
+    PIRATE_WEATHER_AUTH = var.pirate_weather_apis_auth
+    PIRATE_FORECAST_API = var.pirate_forecast_api
+  }
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+
+}
+
+module "config_forecasts" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_forecasts_lambda.id}-lambda-from-container-image"
+  description   = "Configures weather forecast params and the lambdas they're ingested by."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_forecasts.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+}
+
+module "config_iso" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_iso_lambda.id}-lambda-from-container-image"
+  description   = "Configures ISO-NE params and the lambdas they're ingested by."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_iso.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+}
+
+module "config_iterate" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_iterate_lambda.id}-lambda-from-container-image"
+  description   = "Configures iteration node params."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_iterate.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+}
+
+module "config_uscrn" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_uscrn_lambda.id}-lambda-from-container-image"
+  description   = "Configures uscrn params and the lambdas they're ingested by."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_uscrn.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
 
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]

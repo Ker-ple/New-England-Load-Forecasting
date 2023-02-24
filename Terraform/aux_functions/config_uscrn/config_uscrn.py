@@ -11,67 +11,49 @@ import sys
 from datetime import datetime
 
 def lambda_handler(event, context):
-    latlongs = list()
-    stations = list()
-    dates = list()
+    payload = list()
 
     for record in event['records']:
-        try:
-            area = record['area'].lower()
-            date_begin = record['date_begin']
-            date_end = record['date_end']
+        area = record['area'].lower()
+        date_begin = record['date_begin']
+        date_end = record['date_end']
 
-            lat, lon = derive_latlong(area)
-            station = derive_station(area)
-            dates = derive_dates(date_begin, date_end)
+        stations = derive_stations(area)
+        dates = derive_dates(date_begin, date_end)
 
-        except Exception:
-            sys.exit("Invalid records")
+        for date in dates:
 
-        return json.dumps({
-            "records": list(zip(lat, lon, station, dates))
-        })
+            message = {
+                'station_names': stations,
+                'date_begin': date['date_begin'],
+                'date_end': date['date_end']
+            }
 
-def derive_latlong(area):
-    return area_latlong[area].values(), area_station[area]
+            payload.append(message)
 
-def derive_station(area):
-    return area_station[area]
+    return json.dumps({
+        "records": payload
+    })
+
+def derive_stations(area):
+    return area_stations[area]
 
 def derive_dates(s, e):
     # This function splits an input date range into multiple smaller ranges for the uscrn scraper.
 
-    datetime.strptime(s, '%Y%m%d')
-    datetime.strptime(e, '%Y%m%d')
-
     new_dates = [[s,s[:4]+"1231"]] + [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))]+[[e[:4] + "0101", e]]
 
-    return json.dumps({
-        'date_ranges': [
+    return [            
             {
                 'date_begin': x[0],
                 'date_end': x[-1]
             }
             for x in new_dates]
-        })
-        
-area_latlong = {
-    #"boston": {
-    #    "latitude": "42.3601",
-    #    "longitude": "71.0589"
-    #},
-    "durham": {
-        "latitude": "43.1340",
-        "longitude": "70.9264"
-    },
-    "kingston": {
-        "latitude": "41.5568",
-        "longitude": "71.4537"
-    }
-}
 
-area_station = {
+# The following names are gotten from the uscrn website for the associated stations:
+# e.g. https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/2023/
+area_stations = {
     #"boston": [None],
-    "durham": ["Durham_2_N", "Durham_2_SSW"],
-    "kingston": ["Kingston_1_NW", "Kingston_1_W"]    
+    "durham": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
+    "kingston": ["RI_Kingston_1_NW", "RI_Kingston_1_W"]    
 }
