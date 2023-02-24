@@ -3,6 +3,7 @@ import pg8000.native
 from uscrn_utils import *
 import os
 import json
+import pandas as pd
 
 conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
@@ -37,7 +38,7 @@ def lambda_handler(event, context):
 
             hourly_url, subhourly_url = url_for_station(station, year)
 
-            print(hourly_url, '\n', subhourly_url)
+            print("hourly_url: ", hourly_url, '\n', "subhourly_url: ", subhourly_url)
 
             data_hourly = read_uscrn_hourly(hourly_url, record['date_begin'], record['date_end'])
             data_subhourly = read_uscrn_subhourly(subhourly_url, record['date_begin'], record['date_end'])
