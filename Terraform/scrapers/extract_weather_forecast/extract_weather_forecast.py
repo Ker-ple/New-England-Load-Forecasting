@@ -16,7 +16,7 @@ conn = pg8000.native.Connection(
 DDL = """CREATE TABLE IF NOT EXISTS weather_forecasts (
 	forecast_id SERIAL PRIMARY KEY,
 	forecasted_at TIMESTAMP WITH TIME ZONE,
-    forecasted_for TIMESTAMP WITH TIME ZONE
+    forecasted_for TIMESTAMP WITH TIME ZONE,
 	air_temp REAL,
     wind_speed REAL,
     apparent_temp REAL,
@@ -30,14 +30,13 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-    event = json.loads(event)
 
-    api_key = os.environ.get('WEATHER_AUTH')
+    api_key = os.environ.get('PIRATE_WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
     for record in event['records']:
 
-        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key)    
+        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
         data_json = data.to_dict('records')
 
         for row in data_json:
@@ -57,8 +56,9 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
         'temperature': 'air_temp',
         'apparentTemperature': 'apparent_temp',
-        'humidity': 'rel_humidity',
-        'precipAccumulation': 'ppt_total'
+        'humidity': 'relative_humidity',
+        'precipAccumulation': 'ppt_total',
+        'windSpeed': 'wind_speed'
         }
 
     variables_map = kwargs.get('variables_map', default_vars_map)

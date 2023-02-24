@@ -28,7 +28,6 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-    event = json.loads(event)
 
     for record in event['records']:
 

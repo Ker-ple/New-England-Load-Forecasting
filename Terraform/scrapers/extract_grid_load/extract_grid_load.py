@@ -26,7 +26,6 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-    event = json.loads(event)
 
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
