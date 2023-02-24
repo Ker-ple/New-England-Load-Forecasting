@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import math
 from datetime import datetime
+import json
 
 def lambda_handler(event, context):
     print(event)
@@ -12,7 +13,7 @@ def lambda_handler(event, context):
     # a new lambda function is invoked every 30 dates in consideration. each lambda is given equal share of dates to scrape.
     num_lambdas = math.ceil(len(dates)/30)
     # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
-    return json.dumps(
+    return json.dumps({
         'date_ranges':[
             {
                 'date_begin': datetime.strptime(x.tolist()[0], '%Y%m%d').strftime('%Y%m%d'), 
@@ -21,9 +22,9 @@ def lambda_handler(event, context):
             for x in np.array_split(dates, num_lambdas)],
         'run_mode': event['run_mode'],
         'date_end': event['date_end']
-        )
+        })
 
 def define_yyyymmdd_date_range(start, end):
-    # days in this format because the iso-ne api requires it for dates
+    # We define a date range here because it simplifies assigning the number of lambdas.
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
     
