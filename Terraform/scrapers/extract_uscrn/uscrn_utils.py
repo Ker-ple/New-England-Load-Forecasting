@@ -26,10 +26,10 @@ HOURLY_DTYPES = [
 ]
 
 station_id_name_dict = {
-    54794: 'NH_Durham_N',
-    54795: 'NH_Durham_SSW',
-    54796: 'RI_Kingston_NW',
-    54797: 'RI_Kingston_W'   
+    54794: 'NH_Durham_2_N',
+    54795: 'NH_Durham_2_SSW',
+    54796: 'RI_Kingston_1_NW',
+    54797: 'RI_Kingston_1_W'   
 }
 
 def read_uscrn_hourly(filename, start_date=None, end_date=None, **kwargs):
@@ -67,10 +67,10 @@ def read_uscrn_hourly(filename, start_date=None, end_date=None, **kwargs):
 
     station_name = station_id_name_dict[data.iloc[0,0]]
     data = data[variables_map.keys()]
-    data = data.rename(columns=variables_map)
+    data = data.rename(columns = variables_map)
     data = data[start_date:end_date]
     data = data.reset_index()
-    data = data.rename({'index': 'weather_datetime'}, axis=1)
+    data = data.rename(columns = {'index': 'weather_datetime'})
     data['station_name'] = station_name
 
     return data
