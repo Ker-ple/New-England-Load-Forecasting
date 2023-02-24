@@ -14,20 +14,18 @@ def lambda_handler(event, context):
     payload = list()
     print(event)
 
-    event = json.loads(event)
-
     for record in event['records']:
         area = record['area'].lower()
 
         latitude, longitude = derive_latlong(area)
 
-            message = {
-                'latitude': latitude,
-                'longitude': longitude,
-                'area': area
-            }
+        message = {
+            'latitude': latitude,
+            'longitude': longitude,
+            'area': area
+        }
 
-            payload.append(message)
+        payload.append(message)
 
     return json.dumps({
         "records": payload
