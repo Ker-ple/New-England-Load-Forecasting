@@ -10,13 +10,45 @@ import json
 import sys
 from datetime import datetime
 
+"""
+Example JSON input:
+{
+    "areas": ["kingston", "durham"],
+    "date_begin": "20220811",
+    "date_end": "20230224"
+    "config": {
+        "repeat": True,
+        "seconds_delta": 86400
+    }    
+}
+"""
+
+"""
+Example JSON output:
+{
+    "records": [
+        {
+            "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
+            "date_begin": "20220811",
+            "date_end": "20230224"
+        },
+        {
+            "station_names": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
+            "date_begin": "20220811",
+            "date_end": "20230224"
+        }
+    ]
+}
+"""
+
 def lambda_handler(event, context):
     payload = list()
 
-    for record in event['records']:
+    date_begin = event['date_begin']
+    date_end = event['date_end']
+
+    for area in event['areas']:
         area = record['area'].lower()
-        date_begin = record['date_begin']
-        date_end = record['date_end']
 
         stations = derive_stations(area)
         dates = derive_dates(date_begin, date_end)
@@ -31,9 +63,9 @@ def lambda_handler(event, context):
 
             payload.append(message)
 
-    return json.dumps({
+    return {
         "records": payload
-    })
+    }
 
 def derive_stations(area):
     return area_stations[area]
