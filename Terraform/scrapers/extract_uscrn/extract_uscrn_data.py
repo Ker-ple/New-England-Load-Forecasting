@@ -27,26 +27,38 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-    variables_map = event['variables_map']
-    
-    data_hourly = read_uscrn_hourly(event['uscrn_station_url'], event['date_begin'], event['date_end'])
-    data_subhourly = read_uscrn_subhourly(event['uscrn_station_url'], event['date_begin'], event['date_end'])
-    data_joined = data_subhourly.merge(data_hourly, on=['weather_datetime', 'station_name'])
-    data_json = data_joined.to_dict('records')
+    event = json.loads(event)
 
-    for row in data_json:
-        cols = ', '.join(f'"{k}"' for k in row.keys())   
-        vals = ', '.join(f':{k}' for k in row.keys())
-        excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-        stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
-        conn.run(stmt, **row)
+    for record in event['records']:
+
+        year = pd.to_datetime(record['date_begin'], format='%Y%m%d').year
+
+        for station in record['station_names']:
+
+            hourly_url, subhourly_url = url_for_station(station, year)
+
+            print(hourly_url, '\n', subhourly_url)
+
+            data_hourly = read_uscrn_hourly(hourly_url, record['date_begin'], record['date_end'])
+            data_subhourly = read_uscrn_subhourly(subhourly_url, record['date_begin'], record['date_end'])
+            data_joined = data_subhourly.merge(data_hourly, on=['weather_datetime', 'station_name'])
+            data_json = data_joined.to_dict('records')
+
+            for row in data_json:
+                cols = ', '.join(f'"{k}"' for k in row.keys())   
+                vals = ', '.join(f':{k}' for k in row.keys())
+                excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+                stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
+                conn.run(stmt, **row)
 
     return json.dumps({
         'response': 200,
         'script_name': os.path.basename(__file__),
-        'message': 'data sent to postgres',
-        'first_data_point': data_json[0],
-        'last_data_point': data_json[-1],
-        'date_start': event['date_start'],
-        'date_end': event['date_end']
+        'message': 'data sent to postgres'
     })
+
+def url_for_station(station_name, year):
+    subhourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/{year}/CRNS0101-05-{year}-{station_name}.txt"
+    hourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/{year}/CRNH0203-{year}-{station_name}.txt"
+
+    return hourly, subhourly

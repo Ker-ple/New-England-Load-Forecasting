@@ -35,22 +35,22 @@ def lambda_handler(event, context):
     api_key = os.environ.get('WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
-    data = get_data(event['forecast_area'].lower(), base_url=base_url, api_key=api_key)    
-    data_json = data.to_dict('records')
+    for record in event['records']:
 
-    for row in data_json:
-        cols = ', '.join(f'"{k}"' for k in row.keys())   
-        vals = ', '.join(f':{k}' for k in row.keys())
-        excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-        stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
-        conn.run(stmt, **row)
+        data = get_data(record['forecast_area'].lower(), base_url=base_url, api_key=api_key)    
+        data_json = data.to_dict('records')
+
+        for row in data_json:
+            cols = ', '.join(f'"{k}"' for k in row.keys())   
+            vals = ', '.join(f':{k}' for k in row.keys())
+            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+            stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
+            conn.run(stmt, **row)
 
     return json.dumps({
         'response': 200,
         'script_name': os.path.basename(__file__),
-        'message': 'data sent to postgres',
-        'first_data_point': data_json[0],
-        'last_data_point': data_json[-1],
+        'message': 'data sent to postgres'
     })
 
 def get_data(forecast_area, base_url, api_key, **kwargs):
