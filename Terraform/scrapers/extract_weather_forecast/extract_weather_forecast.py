@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import os
 import pg8000.native
-from geopy.geocoders import Nominatim
 from datetime import datetime, timezone
 
 conn = pg8000.native.Connection(
@@ -31,13 +30,14 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
+    event = json.loads(event)
 
     api_key = os.environ.get('WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
     for record in event['records']:
 
-        data = get_data(record['forecast_area'].lower(), base_url=base_url, api_key=api_key)    
+        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key)    
         data_json = data.to_dict('records')
 
         for row in data_json:
@@ -53,15 +53,13 @@ def lambda_handler(event, context):
         'message': 'data sent to postgres'
     })
 
-def get_data(forecast_area, base_url, api_key, **kwargs):
+def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
         'temperature': 'air_temp',
         'apparentTemperature': 'apparent_temp',
         'humidity': 'rel_humidity',
         'precipAccumulation': 'ppt_total'
         }
-
-    latitude, longitude = get_lat_long(forecast_area) 
 
     variables_map = kwargs.get('variables_map', default_vars_map)
     raw_data = get_forecast_weather(latitude, longitude, base_url, api_key)
@@ -84,16 +82,3 @@ def extract_forecast_weather(raw_weather_data, forecast_area, variables_map):
     data['forecasted_at'] = datetime.now(timezone.utc)
     
     return data
-
-def get_lat_long(place):
-
-    place_zipcode_dict = {
-        'boston': '02116',
-        'durham': '03824',
-        'kingston': '02881'
-    }
-
-    geolocator = Nominatim(user_agent = "weather_forecast")
-    location = geolocator.geocode({'zipcode': place_zip_code_dict[place]})
-
-    return location.latitude, location.longitude

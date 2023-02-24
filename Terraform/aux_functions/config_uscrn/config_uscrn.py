@@ -12,21 +12,19 @@ from datetime import datetime
 
 def lambda_handler(event, context):
     payload = list()
+    event = json.loads(event)
 
     for record in event['records']:
         area = record['area'].lower()
         date_begin = record['date_begin']
         date_end = record['date_end']
 
-        lat, lon = derive_latlong(area)
         stations = derive_stations(area)
         dates = derive_dates(date_begin, date_end)
 
         for date in dates:
 
             message = {
-                'latitude': lat,
-                'longitude': lon,
                 'station_names': stations,
                 'date_begin': date['date_begin'],
                 'date_end': date['date_end']
@@ -37,9 +35,6 @@ def lambda_handler(event, context):
     return json.dumps({
         "records": payload
     })
-        
-def derive_latlong(area):
-    return list(area_latlong[area].values())
 
 def derive_stations(area):
     return area_stations[area]
@@ -71,6 +66,8 @@ area_latlong = {
     }
 }
 
+# The following names are gotten from the uscrn website for the associated stations:
+# e.g. https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/2023/
 area_stations = {
     #"boston": [None],
     "durham": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
