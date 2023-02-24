@@ -1,31 +1,4 @@
-module "docker_image_extract_load" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
-
-  create_ecr_repo = true
-  ecr_repo        = random_pet.iso_load_lambda.id
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  image_tag   = "2.0"
-  source_path = "./scrapers/extract_grid_load"
-  platform    = "linux/amd64"
-}
-
-module "docker_image_extract_forecast" {
+module "docker_image_extract_grid_forecast" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
@@ -52,11 +25,11 @@ module "docker_image_extract_forecast" {
   platform    = "linux/amd64"
 }
 
-module "docker_image_split_date" {
+module "docker_image_extract_grid_load" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.split_date_lambda.id
+  ecr_repo        = random_pet.iso_load_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -75,7 +48,7 @@ module "docker_image_split_date" {
   })
 
   image_tag   = "2.0"
-  source_path = "./aux_functions/split_date_range"
+  source_path = "./scrapers/extract_grid_load"
   platform    = "linux/amd64"
 }
 
@@ -103,5 +76,140 @@ module "docker_image_extract_uscrn" {
 
   image_tag   = "2.0"
   source_path = "./scrapers/extract_uscrn"
+  platform    = "linux/amd64"
+}
+
+module "docker_image_extract_weather_forecast" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.weather_forecast_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./scrapers/extract_weather_forecast"
+  platform    = "linux/amd64"
+}
+
+module "docker_image_config_forecasts" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.config_forecasts_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./aux_functions/config_forecasts"
+  platform    = "linux/amd64"
+}
+
+module "docker_image_config_iso" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.config_iso_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./aux_functions/config_iso"
+  platform    = "linux/amd64"
+}
+
+module "docker_image_config_iterate" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.config_iterate_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./aux_functions/config_iterate"
+  platform    = "linux/amd64"
+}
+
+module "docker_image_config_uscrn" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.config_uscrn_lambda.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./aux_functions/config_uscrn"
   platform    = "linux/amd64"
 }
