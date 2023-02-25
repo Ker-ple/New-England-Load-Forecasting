@@ -17,24 +17,27 @@ Example JSON input:
 """
 
 """
-Example list output:
-[
-    {
-        "date_begin": "20220811",
-        "date_end": "20220909"
-    },
-    {
-        "date_begin": "20220910",
-        "date_end": "20221008"
-    },
-    .
-    .
-    .,
-    {
-        "date_begin": "20230126",
-        "date_end: "20230224"
-    }    
-]
+Example JSON output:
+{
+    "records": [
+        {
+            "date_begin": "20220811",
+            "date_end": "20220909"
+        },
+        {
+            "date_begin": "20220910",
+            "date_end": "20221008"
+        },
+        .
+        .
+        .,
+        {
+            "date_begin": "20230126",
+            "date_end: "20230224"
+        }    
+    ]
+}
+
 """
 
 def lambda_handler(event, context):

@@ -5,6 +5,24 @@ import os
 import json
 import pandas as pd
 
+"""
+Example JSON Input:
+{
+    "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
+    "date_begin": "20220811",
+    "date_end": "20230224"
+}
+"""
+
+"""
+Example JSON output:
+{
+    "response": 200,
+    "script_name": "extract_uscrn_data.py",
+    "message": "data sent to postgres"
+}
+"""
+
 conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
         password = os.environ.get('DB_PASSWORD').encode('EUC-JP'),

@@ -16,7 +16,8 @@ Example JSON input:
 
 """
 Example JSON output:
-{
+{   
+    "areas": ["kingston", "durham"],
     "date_begin": "20230225", 
     "date_end": "20230226",
     "config": {

@@ -5,6 +5,33 @@ import os
 import pg8000.native
 from datetime import datetime, timezone
 
+"""
+Example JSON output:
+{
+    "records": [
+        {
+            "latitude": 41.4747,
+            "longitude": -71.5203,
+            "area": "kingston"
+        },
+        {
+            "latitude": 43.1339,
+            "longitude": -70.9264,
+            "area": "durham"
+        }   
+    ]
+}
+"""
+
+"""
+Example JSON output:
+{
+    "response": 200,
+    "script_name": "extract_weather_forecast.py",
+    "message": "data sent to postgres"
+}
+"""
+
 conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
         password = os.environ.get('DB_PASSWORD').encode('EUC-JP'),

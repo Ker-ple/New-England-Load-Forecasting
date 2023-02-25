@@ -5,13 +5,30 @@ import os
 import pg8000.native
 from datetime import datetime, timezone, timedelta
 
+"""
+Example JSON input:
+{
+    "date_begin": "20220811",
+    "date_end": "20220909"
+}
+"""
+
+"""
+Example JSON output: 
+{
+    "response": 200,
+    "script_name": "extract_load_forecast.py",
+    "message": "data successfully sent to postgres"
+}
+"""
+
 conn = pg8000.native.Connection(
-    user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
-    password = os.environ.get('DB_PASSWORD').encode('EUC-JP'),
-    host = os.environ.get('DB_HOSTNAME'),
-    database = os.environ.get('DB_NAME').encode('EUC-JP'),
-    port = 5432
-)
+        user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
+        password = os.environ.get('DB_PASSWORD').encode('EUC-JP'),
+        host = os.environ.get('DB_HOSTNAME'),
+        database = os.environ.get('DB_NAME').encode('EUC-JP'),
+        port = 5432
+    )
 
 DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
     load_id SERIAL PRIMARY KEY,
@@ -50,9 +67,7 @@ def lambda_handler(event, context):
     return {
         'response': 200,
         'script_name': os.path.basename(__file__),
-        'message': 'data successfully sent to postgres',
-        'first_data_point': data_json[0],
-        'last_data_point': data_json[-1]
+        'message': 'data successfully sent to postgres'
     }
 
 def define_yyyymmdd_date_range(start, end):
