@@ -9,4 +9,6 @@ variables.tf
 old_userdata.txt
 Terraform/set_up*
 Terraform/tear_*
-test.py
+todo.txt
+.gitignore
+ec2.txt
