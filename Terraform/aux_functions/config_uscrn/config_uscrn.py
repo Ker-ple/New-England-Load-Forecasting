@@ -65,7 +65,7 @@ def lambda_handler(event, context):
 
     return {
         "records": payload
-    }
+        }
 
 def derive_stations(area):
     return area_stations[area]

@@ -6,7 +6,7 @@ import pg8000.native
 from datetime import datetime, timezone
 
 """
-Example JSON output:
+Example JSON input:
 {
     "records": [
         {
@@ -26,9 +26,16 @@ Example JSON output:
 """
 Example JSON output:
 {
-    "response": 200,
-    "script_name": "extract_weather_forecast.py",
-    "message": "data sent to postgres"
+    "results": [
+        {
+            "area": "durham",
+            "script_name": "extract_weather_forecast.py",
+            "status": "success"
+        },
+        .
+        .
+        .
+    ]
 }
 """
 
@@ -58,25 +65,40 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
 
-    api_key = os.environ.get('PIRATE_WEATHER_AUTH')
-    base_url = os.environ.get('PIRATE_FORECAST_API')
+    
+
+    results = list()
 
     for record in event:
+        try:
+            api_key = os.environ.get('PIRATE_WEATHER_AUTH')
+            base_url = os.environ.get('PIRATE_FORECAST_API')
 
-        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
-        data_json = data.to_dict('records')
+            data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
+            data_json = data.to_dict('records')
 
-        for row in data_json:
-            cols = ', '.join(f'"{k}"' for k in row.keys())   
-            vals = ', '.join(f':{k}' for k in row.keys())
-            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-            stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
-            conn.run(stmt, **row)
+            for row in data_json:
+                cols = ', '.join(f'"{k}"' for k in row.keys())   
+                vals = ', '.join(f':{k}' for k in row.keys())
+                excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+                stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
+                conn.run(stmt, **row)
+            
+            results.append({
+                "input": record,
+                "script_name": os.path.basename(__file__),
+                "status": success
+            })
+        
+        except Exception as e: 
+            results.append({
+                "input": record,
+                "script_name": os.path.basename(__file__),
+                "status": str(e)
+            })
 
     return {
-        'response': 200,
-        'script_name': os.path.basename(__file__),
-        'message': 'data sent to postgres'
+        "results": results
     }
 
 def get_data(latitude, longitude, base_url, api_key, **kwargs):

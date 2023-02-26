@@ -16,9 +16,19 @@ Example JSON input:
 """
 Example JSON output: 
 {
-    "response": 200,
-    "script_name": "extract_load_forecast.py",
-    "message": "data successfully sent to postgres"
+    "results": [
+        {   
+            "input": {
+                "date_begin": "20220811",
+                "date_end": "20220909"
+            }
+            "script_name": "extract_load_forecast.py",
+            "status": "success"
+        },
+        .
+        .
+        .
+    ]
 }
 """
 
@@ -43,31 +53,43 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-
+    results = list()
+    
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
-    data = get_data(event['date_begin'], event['date_end'], base_url, auth)
-    data_json = data.to_dict('records')
+    try:
+        data = get_data(event['date_begin'], event['date_end'], base_url, auth)
+        data_json = data.to_dict('records')
 
-    # requests historical load forecast data for each YYYYMMDD date, then concats the results into a tall dataframe 
-    
-    for row in data_json:
-        cols = ', '.join(f'"{k}"' for k in row.keys())   
-        vals = ', '.join(f':{k}' for k in row.keys())
-        excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-        stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals}) 
-                    ON CONFLICT (weather_datetime) 
-                    DO UPDATE SET 
-                    ({cols}) = ({excluded});"""
-        conn.run(stmt, **row)
-    print('uploaded load data')
+        # requests historical load forecast data for each YYYYMMDD date, then concats the results into a tall dataframe 
+        
+        for row in data_json:
+            cols = ', '.join(f'"{k}"' for k in row.keys())   
+            vals = ', '.join(f':{k}' for k in row.keys())
+            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+            stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals}) 
+                        ON CONFLICT (weather_datetime) 
+                        DO UPDATE SET 
+                        ({cols}) = ({excluded});"""
+            conn.run(stmt, **row)
+
+        results.append({
+            "input": event,
+            "script_name": os.path.basename(__file__),
+            "status": "success"
+        })
+        
+    except Exception as e:
+        results.append({
+            "input": event,
+            "script_name": os.path.basename(__file__),
+            "status": str(e)
+        })
 
     # a success returns the .py file name and the first and last data point
     return {
-        'response': 200,
-        'script_name': os.path.basename(__file__),
-        'message': 'data successfully sent to postgres'
+        "results": results
     }
 
 def define_yyyymmdd_date_range(start, end):
