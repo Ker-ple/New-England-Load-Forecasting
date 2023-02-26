@@ -28,7 +28,7 @@ Example JSON output:
 {
     "results": [
         {
-            "area": "durham",
+            "input": "durham",
             "script_name": "extract_weather_forecast.py",
             "status": "success"
         },
@@ -65,11 +65,9 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
 
-    
-
     results = list()
 
-    for record in event:
+    for record in event['records']:
         try:
             api_key = os.environ.get('PIRATE_WEATHER_AUTH')
             base_url = os.environ.get('PIRATE_FORECAST_API')

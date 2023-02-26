@@ -13,9 +13,11 @@ from datetime import datetime
 """
 Example JSON input:
 {
-    "areas": ["kingston", "durham"],
-    "date_begin": "20220811",
-    "date_end": "20230224"
+    "params": {
+        "areas": ["kingston", "durham"],
+        "date_begin": "20220811",
+        "date_end": "20230206"
+    },
     "config": {
         "repeat": True,
         "seconds_delta": 86400
@@ -30,24 +32,37 @@ Example JSON output:
         {
             "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
             "date_begin": "20220811",
-            "date_end": "20230224"
+            "date_end": "20221108"
         },
         {
             "station_names": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
             "date_begin": "20220811",
-            "date_end": "20230224"
+            "date_end": "20221108"
+        },
+        {
+            "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
+            "date_begin": "20221108",
+            "date_end": "20220206"
         }
-    ]
+    ],
+    "config": {
+        "repeat": True,
+        "seconds_delta": 86400
+    }    
 }
 """
 
 def lambda_handler(event, context):
     payload = list()
 
-    date_begin = event['date_begin']
-    date_end = event['date_end']
+    print(event)
 
-    for area in event['areas']:
+    params = event['params']
+
+    date_begin = params['date_begin']
+    date_end = params['date_end']
+
+    for area in params['areas']:
         area = record['area'].lower()
 
         stations = derive_stations(area)
@@ -70,22 +85,33 @@ def lambda_handler(event, context):
 def derive_stations(area):
     return area_stations[area]
 
-def derive_dates(s, e):
-    # This function splits an input date range into multiple smaller ranges for the uscrn scraper.
-
-    new_dates = [[s,s[:4]+"1231"]] + [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))]+[[e[:4] + "0101", e]]
-
-    return [            
-            {
-                'date_begin': x[0],
-                'date_end': x[-1]
-            }
-            for x in new_dates]
-
 # The following names are gotten from the uscrn website for the associated stations:
 # e.g. https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/2023/
+
 area_stations = {
     #"boston": [None],
     "durham": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
     "kingston": ["RI_Kingston_1_NW", "RI_Kingston_1_W"]    
 }
+
+def derive_dates(s, e):
+    print(event)
+
+    # This function creates date ranges for the iso-ne scrapers.
+
+    dates = define_yyyymmdd_date_range(s, e)
+    # a new lambda function is invoked every 90 days in consideration. each lambda is given equal share of dates to scrape.
+    num_lambdas = math.ceil(len(dates)/90)
+    # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
+    return {
+        "records": [
+            {
+                'date_begin': datetime.strptime(x.tolist()[0], '%Y%m%d').strftime('%Y%m%d'), 
+                'date_end': datetime.strptime(x.tolist()[-1], '%Y%m%d').strftime('%Y%m%d')
+            }
+            for x in np.array_split(dates, num_lambdas)]
+    }
+
+def define_yyyymmdd_date_range(start, end):
+    # We define a date range here because it simplifies assigning the number of lambdas.
+    return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]

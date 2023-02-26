@@ -24,10 +24,7 @@ Example JSON output:
             }
             "script_name": "extract_grid_load.py",
             "status": "success"
-        },
-        .
-        .
-        .
+        }
     ]
 }
 """
@@ -54,7 +51,7 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
     results = list()
-    
+
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
@@ -66,8 +63,8 @@ def lambda_handler(event, context):
             cols = ', '.join(f'"{k}"' for k in row.keys())   
             vals = ', '.join(f':{k}' for k in row.keys())
             excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-            stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals}) 
-                        ON CONFLICT (weather_datetime) 
+            stmt = f"""INSERT INTO iso_ne_load ({cols}) VALUES ({vals}) 
+                        ON CONFLICT (load_datetime) 
                         DO UPDATE SET 
                         ({cols}) = ({excluded});"""
             conn.run(stmt, **row)
@@ -107,5 +104,4 @@ def get_data(start_date, end_date, base_url, auth):
     final_df = final_df.rename({'Load': 'actual_load_mw', 'NativeLoad': 'native_load_mw', 'BeginDate': 'load_datetime'}, axis=1)
     final_df = final_df.round({'actual_load_mw': 0, 'native_load_mw': 0})
     final_df = final_df.astype({'actual_load_mw': 'int16', 'native_load_mw': 'int16'})
-    final_df.tz_convert('UTC')
     return final_df

@@ -13,7 +13,9 @@ from datetime import datetime
 """
 Example JSON input:
 {
-    "areas": ["kingston", "durham"]
+    "params": {
+        "areas": ["kingston", "durham"]
+    }
     "config": {
         "repeat": True,
         "seconds_delta": 3600
@@ -35,7 +37,11 @@ Example JSON output:
             "longitude": -70.9264,
             "area": "durham"
         }   
-    ]
+    ],
+    "config": {
+        "repeat": True,
+        "seconds_delta": 3600
+    } 
 }
 """
 
@@ -43,7 +49,9 @@ def lambda_handler(event, context):
     payload = list()
     print(event)
 
-    for area in event['areas']:
+    params = event['params']
+
+    for area in params['areas']:
         area = area.lower()
 
         latitude, longitude = derive_latlong(area)

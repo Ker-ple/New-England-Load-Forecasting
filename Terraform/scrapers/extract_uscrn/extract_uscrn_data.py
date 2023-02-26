@@ -18,7 +18,7 @@ Example JSON Input:
 Example JSON output:
 {
     "results": [
-        {
+        {   
             "input": {
                 "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
                 "date_begin": "20220811",
@@ -31,7 +31,7 @@ Example JSON output:
         .
         .
         .
-    ]
+    ],   
 }
 """
 

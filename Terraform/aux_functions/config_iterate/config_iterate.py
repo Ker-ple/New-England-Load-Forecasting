@@ -4,12 +4,27 @@ import json
 """
 Example JSON input:
 {
-    "areas": ["kingston", "durham"],
-    "date_begin": "20220811",
-    "date_end": "20230224",
+    "params": {
+        "areas": ["kingston", "durham"],
+        "date_begin": "20220811",
+        "date_end": "20230206"
+    },
     "config": {
-        "repeat": True
-        "seconds_delta": 172800
+        "repeat": "True",
+        "seconds_delta": "86400"
+    }    
+}
+
+OR 
+
+{
+    "params": {
+        "date_begin": "20220811",
+        "date_end": "20230224"
+    },
+    "config": {
+        "repeat": "True"
+        "seconds_delta": "300"
     }
 }
 """
@@ -17,30 +32,43 @@ Example JSON input:
 """
 Example JSON output:
 {   
-    "areas": ["kingston", "durham"],
-    "date_begin": "20230225", 
-    "date_end": "20230226",
+    "params": {
+        "areas": ["kingston", "durham"],
+        "date_begin": "20230207",
+        "date_end": "20230208"
+    },
     "config": {
-        "repeat": True
-        "seconds_delta": 172800
-    }
+        "repeat": True,
+        "seconds_delta": "86400"
+    }   
 }
 """
 
 def lambda_handler(event, context):
 
-    # This function makes new dates for both iso_ne and uscrn scrapers.
+    # This function makes parameters for both iso_ne and uscrn scrapers, for their next run iteration.
 
     print(event)
 
-    old_date_end = datetime.strptime(event['date_end'], '%Y%m%d')
-    days_delta = event['seconds_delta']
+    old_params = event['params']
+    config = event['config']
 
-    new_date_begin = old_date_end + time_delta(days = 1)
-    new_date_end = new_date_begin + time_delta(days = days_delta)
+    new_params = {}
+
+    # areas stay the same
+    if "areas" in old_params:
+        new_params['areas'] = old_params['areas']
+
+    # have next iteration query starting one day after end of current query
+    if "date_end" in old_params:
+        old_date_end = datetime.strptime(old_params['date_end'], '%Y%m%d')
+        seconds_delta = int(config['seconds_delta'])
+        new_date_begin = old_date_end + time_delta(days = 1)
+        new_date_end = new_date_begin + time_delta(seconds = seconds_delta)
+        new_params['date_begin'] = new_date_begin
+        new_params['new_date_end'] = new_date_end  
 
     return {
-        'date_begin': new_date_begin.strftime('%Y%m%d'),
-        'date_end': new_date_end.strftime('%Y%m%d'),
-        'run_mode': event['run_mode']
+        "params": new_params,
+        "config": config
     }
