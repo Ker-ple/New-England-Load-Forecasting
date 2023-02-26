@@ -5,6 +5,40 @@ import os
 import pg8000.native
 from datetime import datetime, timezone
 
+"""
+Example JSON input:
+{
+    "records": [
+        {
+            "latitude": 41.4747,
+            "longitude": -71.5203,
+            "area": "kingston"
+        },
+        {
+            "latitude": 43.1339,
+            "longitude": -70.9264,
+            "area": "durham"
+        }   
+    ]
+}
+"""
+
+"""
+Example JSON output:
+{
+    "results": [
+        {
+            "input": "durham",
+            "script_name": "extract_weather_forecast.py",
+            "status": "success"
+        },
+        .
+        .
+        .
+    ]
+}
+"""
+
 conn = pg8000.native.Connection(
         user = os.environ.get('DB_USERNAME').encode('EUC-JP'),
         password = os.environ.get('DB_PASSWORD').encode('EUC-JP'),
@@ -31,26 +65,39 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
 
-    api_key = os.environ.get('PIRATE_WEATHER_AUTH')
-    base_url = os.environ.get('PIRATE_FORECAST_API')
+    results = list()
 
     for record in event['records']:
+        try:
+            api_key = os.environ.get('PIRATE_WEATHER_AUTH')
+            base_url = os.environ.get('PIRATE_FORECAST_API')
 
-        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
-        data_json = data.to_dict('records')
+            data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
+            data_json = data.to_dict('records')
 
-        for row in data_json:
-            cols = ', '.join(f'"{k}"' for k in row.keys())   
-            vals = ', '.join(f':{k}' for k in row.keys())
-            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-            stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
-            conn.run(stmt, **row)
+            for row in data_json:
+                cols = ', '.join(f'"{k}"' for k in row.keys())   
+                vals = ', '.join(f':{k}' for k in row.keys())
+                excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+                stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
+                conn.run(stmt, **row)
+            
+            results.append({
+                "input": record,
+                "script_name": os.path.basename(__file__),
+                "status": success
+            })
+        
+        except Exception as e: 
+            results.append({
+                "input": record,
+                "script_name": os.path.basename(__file__),
+                "status": str(e)
+            })
 
-    return json.dumps({
-        'response': 200,
-        'script_name': os.path.basename(__file__),
-        'message': 'data sent to postgres'
-    })
+    return {
+        "results": results
+    }
 
 def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
@@ -67,7 +114,7 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
     return data
 
 def get_forecast_weather(latitude, longitude, base_url, api_key):
-    resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly', timeout=None)
+    resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly&units=si', timeout=None)
     return resp.text
 
 def extract_forecast_weather(raw_weather_data, forecast_area, variables_map):

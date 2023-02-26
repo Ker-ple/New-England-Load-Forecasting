@@ -1,2 +1,5 @@
-Convert source data to consistent metric (e.g. temperature in F, wind in m/s)
-Create object mapping forecast areas to uscrn urls
+Convert source data to consistent metric (e.g. temperature in F, wind in m/s) DONE
+Create object mapping forecast areas to uscrn urls DONE
+make function that splits input dates for uscrn into distinct years DONE
+
+configure API to allow for parallel workloads and iteration handling
