@@ -19,8 +19,8 @@ Example JSON input:
         "date_end": "20230206"
     },
     "config": {
-        "repeat": True,
-        "seconds_delta": 86400
+        "repeat": "True",
+        "seconds_delta": "86400"
     }    
 }
 """
@@ -45,10 +45,13 @@ Example JSON output:
             "date_end": "20220206"
         }
     ],
+    "params": {
+        "areas": ["kingston", "durham"]
+    },
     "config": {
         "repeat": True,
-        "seconds_delta": 86400
-    }    
+        "seconds_delta": 3600
+    }   
 }
 """
 
@@ -79,7 +82,9 @@ def lambda_handler(event, context):
             payload.append(message)
 
     return {
-        "records": payload
+        "records": payload,
+        "params": params,
+        "config": event['config']
         }
 
 def derive_stations(area):
