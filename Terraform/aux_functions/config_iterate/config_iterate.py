@@ -63,10 +63,10 @@ def lambda_handler(event, context):
     if "date_end" in old_params:
         old_date_end = datetime.strptime(old_params['date_end'], '%Y%m%d')
         seconds_delta = int(config['seconds_delta'])
-        new_date_begin = old_date_end + time_delta(days = 1)
-        new_date_end = new_date_begin + time_delta(seconds = seconds_delta)
-        new_params['date_begin'] = new_date_begin
-        new_params['new_date_end'] = new_date_end  
+        new_date_begin = old_date_end + timedelta(days = 1)
+        new_date_end = new_date_begin + timedelta(seconds = seconds_delta)
+        new_params['date_begin'] = new_date_begin.strftime('%Y%m%d')
+        new_params['date_end'] = new_date_end.strftime('%Y%m%d')
 
     return {
         "params": new_params,

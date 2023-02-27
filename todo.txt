@@ -3,3 +3,5 @@ Create object mapping forecast areas to uscrn urls DONE
 make function that splits input dates for uscrn into distinct years DONE
 
 configure API to allow for parallel workloads and iteration handling
+
+investigate whether ISO's forecasts for given datetime change as it nears.

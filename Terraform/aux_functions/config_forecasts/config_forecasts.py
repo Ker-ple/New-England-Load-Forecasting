@@ -38,10 +38,13 @@ Example JSON output:
             "area": "durham"
         }   
     ],
+    "params": {
+        "areas": ["kingston", "durham"]
+    }
     "config": {
-        "repeat": True,
-        "seconds_delta": 3600
-    } 
+        "repeat": "True",
+        "seconds_delta": "3600"
+    }  
 }
 """
 
@@ -65,7 +68,9 @@ def lambda_handler(event, context):
         payload.append(message)
 
     return {
-        "records": payload
+        "records": payload,
+        "params": params,
+        "config": config
     }
 
 def derive_latlong(area):
