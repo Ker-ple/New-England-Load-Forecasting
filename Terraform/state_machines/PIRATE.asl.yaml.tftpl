@@ -1,0 +1,71 @@
+Comment: State machine for the ISO data pipeline.
+StartAt: Config ISO
+States:
+  Config ISO:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_forecasts_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Get PirateWeather
+    OutputPath: "$.Payload"
+  Get PirateWeather:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: "$.Payload"
+    Parameters: 
+      Payload.$: "$"
+      FunctionName: ${pirate_weather_lambda_arn}:LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    InputPath: "$."
+    Next: Repeat?
+    ResultPath: $.pirate_weather_results
+  Repeat?:
+    Type: Choice
+    Choices:
+    - Not:
+        Variable: "$.config.repeat"
+        StringMatches: 'True'
+      Next: Success
+    Default: Wait
+  Success:
+    Type: Succeed
+  Wait:
+    Type: Wait
+    Next: Iterate
+    SecondsPath: "$.config.seconds_delta"
+  Iterate:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: "$.Payload"
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_iterate_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Success
+  

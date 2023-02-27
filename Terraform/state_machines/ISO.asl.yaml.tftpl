@@ -1,0 +1,115 @@
+Comment: State machine for the ISO data pipeline.
+StartAt: Config ISO
+States:
+  Config ISO:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_iso_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Parallel
+    OutputPath: "$.Payload"
+  Parallel:
+    Type: Parallel
+    Branches:
+    - StartAt: Load Map
+      States:
+        Load Map:
+          Type: Map
+          MaxConcurrency: 12
+          ItemProcessor:
+            ProcessorConfig:
+              Mode: INLINE
+            StartAt: Get Load
+            States:
+              Get Load:
+                Type: Task
+                Resource: arn:aws:states:::lambda:invoke
+                OutputPath: "$.Payload"
+                Parameters:
+                  Payload.$: "$"
+                  FunctionName: ${iso_load_lambda_arn}:$LATEST
+                Retry:
+                - ErrorEquals:
+                  - Lambda.ServiceException
+                  - Lambda.AWSLambdaException
+                  - Lambda.SdkClientException
+                  - Lambda.TooManyRequestsException
+                  IntervalSeconds: 2
+                  MaxAttempts: 6
+                  BackoffRate: 2
+                End: true
+          End: true
+          InputPath: "$.records"
+    - StartAt: Forecast Map
+      States:
+        Forecast Map:
+          Type: Map
+          MaxConcurrency: 12
+          ItemProcessor:
+            ProcessorConfig:
+              Mode: INLINE
+            StartAt: Get Forecast
+            States:
+              Get Forecast:
+                Type: Task
+                Resource: arn:aws:states:::lambda:invoke
+                OutputPath: "$.Payload"
+                Parameters:
+                  Payload.$: "$"
+                  FunctionName: ${iso_forecast_lambda_arn}:$LATEST
+                Retry:
+                - ErrorEquals:
+                  - Lambda.ServiceException
+                  - Lambda.AWSLambdaException
+                  - Lambda.SdkClientException
+                  - Lambda.TooManyRequestsException
+                  IntervalSeconds: 2
+                  MaxAttempts: 6
+                  BackoffRate: 2
+                End: true
+          End: true
+          InputPath: "$.records"
+    Next: Repeat?
+    ResultPath: "$.iso_results"
+  Repeat?:
+    Type: Choice
+    Choices:
+    - Not:
+        Variable: "$.config.repeat"
+        StringMatches: 'True'
+      Next: Success
+    Default: Wait
+  Success:
+    Type: Succeed
+  Wait:
+    Type: Wait
+    Next: Iterate
+    SecondsPath: "$.config.seconds_delta"
+  Iterate:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: "$.Payload"
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_iterate_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Success
+  

@@ -1,0 +1,80 @@
+Comment: State machine for the USCRN data pipeline.
+StartAt: Config USCRN
+States:
+  Config USCRN:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_uscrn_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Get Data Map
+    OutputPath: "$.Payload"
+  Get Data Map:
+    Type: Map
+    MaxConcurrency: 12
+    ItemProcessor:
+      ProcessorConfig:
+        Mode: INLINE
+      StartAt: Get USCRN
+      States: 
+        Get USCRN:
+          Type: Task
+          Resource: arn:aws:states:::lambda:invoke
+          OutputPath: "$.Payload"
+          Parameters: 
+            Payload.$: "$"
+            FunctionName: ${uscrn_lambda_arn}:LATEST
+          Retry:
+          - ErrorEquals:
+            - Lambda.ServiceException
+            - Lambda.AWSLambdaException
+            - Lambda.SdkClientException
+            - Lambda.TooManyRequestsException
+            IntervalSeconds: 2
+            MaxAttempts: 6
+            BackoffRate: 2
+          End: true
+    InputPath: "$.records"
+    Next: Repeat?
+    ResultPath: $.uscrn_results
+  Repeat?:
+    Type: Choice
+    Choices:
+    - Not:
+        Variable: "$.config.repeat"
+        StringMatches: 'True'
+      Next: Success
+    Default: Wait
+  Success:
+    Type: Succeed
+  Wait:
+    Type: Wait
+    Next: Iterate
+    SecondsPath: "$.config.seconds_delta"
+  Iterate:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: "$.Payload"
+    Parameters:
+      Payload.$: "$"
+      FunctionName: ${config_iterate_lambda_arn}:$LATEST
+    Retry:
+    - ErrorEquals:
+      - Lambda.ServiceException
+      - Lambda.AWSLambdaException
+      - Lambda.SdkClientException
+      - Lambda.TooManyRequestsException
+      IntervalSeconds: 2
+      MaxAttempts: 6
+      BackoffRate: 2
+    Next: Success
+  
