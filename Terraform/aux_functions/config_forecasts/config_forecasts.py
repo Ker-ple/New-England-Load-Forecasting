@@ -43,7 +43,8 @@ Example JSON output:
     }
     "config": {
         "repeat": "True",
-        "seconds_delta": "3600"
+        "seconds_delta": "3600",
+        "state_machine_arn": "rtrntrstt"
     }  
 }
 """
@@ -53,6 +54,8 @@ def lambda_handler(event, context):
     print(event)
 
     params = event['params']
+    config = event['config']
+    config['state_machine_arn'] = os.environ.get('STATE_MACHINE_ARN')
 
     for area in params['areas']:
         area = area.lower()

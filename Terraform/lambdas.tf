@@ -174,6 +174,10 @@ module "config_forecasts" {
   package_type  = "Image"
   architectures = ["x86_64"]
 
+ environment_variables = {
+    state_machine_arn = module.pirate_step_function.state_machine_arn
+  }
+
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
   attach_network_policy  = true
@@ -204,6 +208,10 @@ module "config_iso" {
   image_uri     = module.docker_image_config_iso.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
+
+  environment_variables = {
+    state_machine_arn = module.iso_step_function.state_machine_arn
+  }  
 
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
@@ -236,6 +244,7 @@ module "config_iterate" {
   package_type  = "Image"
   architectures = ["x86_64"]
 
+
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
   attach_network_policy  = true
@@ -266,6 +275,10 @@ module "config_uscrn" {
   image_uri     = module.docker_image_config_uscrn.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
+
+  environment_variables = {
+    state_machine_arn = module.uscrn_step_function.state_machine_arn
+  }
 
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]

@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
+import boto3
 
 """
 Example JSON input:
@@ -49,10 +50,17 @@ def lambda_handler(event, context):
     # This function makes parameters for both iso_ne and uscrn scrapers, for their next run iteration.
 
     print(event)
+`
+    # to create a unique name for the next state machine iteration
+    uid = datetime.now(timezone.utc).strftime('%Y%m%d, %H:%H:%S')
+    state_machine_arn = event['state_machine_arn']
+    pipeline_name = state_machine_arn.split(':')[-1]
 
+    # getting the params and config of the current state machine execution 
     old_params = event['params']
     config = event['config']
 
+    # making new params for the next state machine iteration
     new_params = {}
 
     # areas stay the same
@@ -68,7 +76,19 @@ def lambda_handler(event, context):
         new_params['date_begin'] = new_date_begin.strftime('%Y%m%d')
         new_params['date_end'] = new_date_end.strftime('%Y%m%d')
 
-    return {
+    client = boto3.client('stepfunctions')
+    response = client.start_execution(
+        stateMachineArn=state_machine_arn,
+        name = pipeline_name+uid,
+        input = {
         "params": new_params,
         "config": config
+    })
+
+    return {
+        'response': response,
+        'input': {
+            'params': new_params,
+            'config': config
+        }
     }

@@ -1,4 +1,3 @@
----
 Comment: State machine for the ISO data pipeline.
 StartAt: Config ISO
 States:
@@ -7,7 +6,7 @@ States:
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: arn:aws:lambda:us-east-1:485809471371:function:set-labrador-lambda-from-container-image:$LATEST
+      FunctionName: ${config_iso_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -26,6 +25,7 @@ States:
       States:
         Load Map:
           Type: Map
+          MaxConcurrency: 12
           ItemProcessor:
             ProcessorConfig:
               Mode: INLINE
@@ -37,7 +37,7 @@ States:
                 OutputPath: "$.Payload"
                 Parameters:
                   Payload.$: "$"
-                  FunctionName: arn:aws:lambda:us-east-1:485809471371:function:elegant-katydid-lambda-from-container-image:$LATEST
+                  FunctionName: ${iso_load_lambda_arn}:$LATEST
                 Retry:
                 - ErrorEquals:
                   - Lambda.ServiceException
@@ -54,6 +54,7 @@ States:
       States:
         Forecast Map:
           Type: Map
+          MaxConcurrency: 12
           ItemProcessor:
             ProcessorConfig:
               Mode: INLINE
@@ -65,7 +66,7 @@ States:
                 OutputPath: "$.Payload"
                 Parameters:
                   Payload.$: "$"
-                  FunctionName: arn:aws:lambda:us-east-1:485809471371:function:splendid-giraffe-lambda-from-container-image:$LATEST
+                  FunctionName: ${iso_forecast_lambda_arn}:$LATEST
                 Retry:
                 - ErrorEquals:
                   - Lambda.ServiceException
@@ -87,16 +88,20 @@ States:
         Variable: "$.config.repeat"
         StringMatches: 'True'
       Next: Success
-    Default: Iterate
+    Default: Wait
   Success:
     Type: Succeed
+  Wait:
+    Type: Wait
+    Next: Iterate
+    SecondsPath: "$.config.seconds_delta"
   Iterate:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     OutputPath: "$.Payload"
     Parameters:
       Payload.$: "$"
-      FunctionName: arn:aws:lambda:us-east-1:485809471371:function:sacred-moray-lambda-from-container-image:$LATEST
+      FunctionName: ${config_iterate_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -106,8 +111,5 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    Next: Wait
-  Wait:
-    Type: Wait
-    Next: Config ISO
-    SecondsPath: "$.config.seconds_delta"
+    Next: Success
+  
