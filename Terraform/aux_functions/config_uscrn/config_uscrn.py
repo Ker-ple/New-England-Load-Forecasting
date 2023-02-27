@@ -43,14 +43,18 @@ Example JSON output:
             "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
             "date_begin": "20221108",
             "date_end": "20220206"
-        }
+        },
+        .
+        .
+        .
     ],
     "params": {
         "areas": ["kingston", "durham"]
     },
     "config": {
         "repeat": True,
-        "seconds_delta": 3600
+        "seconds_delta": 3600,
+        "state_machine_arn": "arstst"
     }   
 }
 """
@@ -61,6 +65,8 @@ def lambda_handler(event, context):
     print(event)
 
     params = event['params']
+    config = event['config']
+    config['state_machine_arn'] = os.environ.get('STATE_MACHINE_ARN')
 
     date_begin = params['date_begin']
     date_end = params['date_end']
@@ -84,7 +90,7 @@ def lambda_handler(event, context):
     return {
         "records": payload,
         "params": params,
-        "config": event['config']
+        "config": config
         }
 
 def derive_stations(area):
