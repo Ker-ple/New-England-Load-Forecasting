@@ -34,8 +34,12 @@ Example JSON output:
             "date_end: "20230224"
         }    
     ],
+    "params": {
+        "date_begin": "20220811",
+        "date_end": "20230224"
+    },
     "config": {
-        "repeat": "True",
+        "repeat": "True"
         "seconds_delta": "300"
     }
 }
@@ -60,8 +64,9 @@ def lambda_handler(event, context):
                 'date_end': datetime.strptime(x.tolist()[-1], '%Y%m%d').strftime('%Y%m%d')
             }
             for x in np.array_split(dates, num_lambdas)],
+        "params": params,
         "config": event['config']
-        }
+    }
 
 def define_yyyymmdd_date_range(start, end):
     # We define a date range here because it simplifies assigning the number of lambdas.

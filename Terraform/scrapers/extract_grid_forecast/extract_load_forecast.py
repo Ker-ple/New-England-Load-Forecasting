@@ -39,7 +39,7 @@ conn = pg8000.native.Connection(
 
 DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
     load_id SERIAL PRIMARY KEY,
-    load_datetime_utc TIMESTAMP WITH TIME ZONE,
+    load_datetime TIMESTAMP WITH TIME ZONE,
     actual_load_mw INTEGER, 
     forecast_load_mw INTEGER,
     native_load_mw INTEGER,
@@ -64,7 +64,7 @@ def lambda_handler(event, context):
         for row in data_json:
             cols = ', '.join(f'"{k}"' for k in row.keys())   
             vals = ', '.join(f':{k}' for k in row.keys())
-            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+            excluded = ', '.join(f'EXCLUDED.{k}' for k in row.keys())
             stmt = f"""INSERT INTO iso_ne_load ({cols}) VALUES ({vals}) 
                         ON CONFLICT (load_datetime) 
                         DO UPDATE SET 
