@@ -6,9 +6,10 @@
 4. Derive date ranges grouped by year
 """
 
-import json
-import sys
+import os
 from datetime import datetime
+import numpy as np
+import pandas as pd
 
 """
 Example JSON input:

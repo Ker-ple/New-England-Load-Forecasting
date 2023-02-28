@@ -6,8 +6,7 @@
 4. Derive date ranges grouped by year
 """
 
-import json
-import sys
+import os
 from datetime import datetime
 
 """
