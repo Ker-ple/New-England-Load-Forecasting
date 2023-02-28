@@ -13,7 +13,7 @@ module "iso_step_function" {
     source  = "terraform-aws-modules/step-functions/aws"
     version = "2.7.3"
 
-    name = "ISO-2"
+    name = "ISO"
     type = "STANDARD"
 
     definition = jsonencode(yamldecode(templatefile(
@@ -48,9 +48,9 @@ module "uscrn_step_function" {
 
     definition = jsonencode(yamldecode(templatefile(
         "${path.root}/state_machines/USCRN.asl.yaml.tftpl", {
-        "config_uscrn_lambda_arn" = module.config_uscrn.lambda_function_arn
-        "uscrn_lambda_arn" = module.uscrn_extract_weather.lambda_function_arn
-        "iterate_lambda_arn" = "${local.config_iterate_lambda_arn}"
+        "config_uscrn_lambda_arn" = local.config_uscrn_lambda_arn
+        "uscrn_lambda_arn" = local.uscrn_lambda_arn
+        "iterate_lambda_arn" = local.config_iterate_lambda_arn
     })))
 
     attach_policy_statements = true
@@ -60,7 +60,7 @@ module "uscrn_step_function" {
             actions = ["lambda:InvokeFunction"],
             resources = [
                 "${local.config_uscrn_lambda_arn}:*",
-                "${module.uscrn_lambda_arn}:*",
+                "${local.uscrn_lambda_arn}:*",
                 "${local.config_iterate_lambda_arn}:*"
             ]
         }
@@ -76,9 +76,9 @@ module "pirate_step_function" {
 
     definition = jsonencode(yamldecode(templatefile(
         "${path.root}/state_machines/PIRATE.asl.yaml.tftpl", {
-        "config_forecasts_lambda_arn" = module.config_forecasts.lambda_function_arn
-        "pirate_weather_lambda_arn" = module.pirate_extract_weather_forecasts.lambda_function_arn
-        "iterate_lambda_arn" = "${local.config_iterate_lambda_arn}"
+        "config_forecasts_lambda_arn" = local.config_forecasts_lambda_arn
+        "pirate_weather_lambda_arn" = local.pirate_weather_lambda_arn
+        "iterate_lambda_arn" = local.config_iterate_lambda_arn
     })))
 
     attach_policy_statements = true

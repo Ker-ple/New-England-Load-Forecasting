@@ -41,7 +41,7 @@ Example JSON output:
     "config": {
         "repeat": "True",
         "seconds_delta": "300",
-        "state_machine_arn": "tresntrt"
+        "state_machine_arn": "arn:aws:states:us-east-1:485809471371:stateMachine:ISO"
     }
 }
 

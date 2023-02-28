@@ -55,7 +55,7 @@ Example JSON output:
     "config": {
         "repeat": True,
         "seconds_delta": 3600,
-        "state_machine_arn": "arstst"
+        "state_machine_arn": "arn:aws:states:us-east-1:485809471371:stateMachine:USCRN"
     }   
 }
 """
