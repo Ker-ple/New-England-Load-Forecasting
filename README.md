@@ -1,5 +1,6 @@
 # New England energy load forecasting *IN PROGRESS* #
 
+
 The goal of this project is to improve upon current load forecasting methods adopted by ISO-NE, the energy regulatory body for New England. We do this by scraping the following: historical actual and forecasted load via the ISO-NE API, weather forecasts via the Pirate Weather API, and historical weather from various government weather stations. 
 
 The architecture so far is split among three state machines: ISO, USCRN, and PIRATE.
@@ -15,3 +16,10 @@ ISO receives a JSON block containing two key-value pairs: the first is a param b
 
 ## To do ##
 Once the state machines are ready, I will query historical actual and historical forecasted load and weather from 2018 to the ongoing present. Then, I will write code to create load forecasts from this data, deploy it on ECS Fargate, and show how my forecasts compare with ISO-NE's forecasts on via a dashboard deployed on an EC2 instance behind CloudFront. If my model doesn't perform well enough, then I will add additional weather stations and forecast areas to query.
+=======
+#### The goal of this project is to improve upon current load forecasting methods adopted by ISO-NE, the energy regulatory body for New England. We do this by scraping the following: historical New England energy load data from the ISO-NE API, weather forecasts data via the Pirate Weather API, and historical weather data from various government weather stations. 
+
+#### This project is mainly built on top of AWS Lambda for automatically scraping data at a yet-to-be-determined frequency. This data, which is fed into an RDS Postgres DB, will be used by an ECS Fargate instance to create a time series model for load forecasting.
+
+#### Services used: AWS Lambda, AWS RDS, AWS Step Functions, AWS ECS Fargate, Docker, and Terraform.
+
