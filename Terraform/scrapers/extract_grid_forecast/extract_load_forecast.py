@@ -100,11 +100,11 @@ def get_data(start_date, end_date, base_url, auth):
             retries = list()
             for date in date_range:
                 try:
-                    r = client.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', timeout=30)
+                    r = client.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', timeout=60)
                     resp_list.append(r.json())
                     print(f"response code for {date}: ", r)
                 # you might get this error when using httpx.Client, so we put the failed attempts in a list to try again later
-                except httpx.RemoteProtocolError:
+                except Exception:
                     retries.append(date)
                     print(f"RME for {date} ")
             date_range = retries
