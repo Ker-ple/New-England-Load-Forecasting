@@ -14,6 +14,16 @@ locals {
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
 
+  export DB_HOST="${module.rds.db_instance_address}"
+  export DB_NAME="${var.db_name}"
+  export DB_PASSWORD="${var.db_password}"
+  export DB_USER="${var.db_username}"
+  echo $DB_HOST
+  echo $DB_NAME
+  echo $DB_PASSWORD
+  echo $DB_USER
+  echo "finished setting up"
+
   EOT
 }
 
@@ -23,7 +33,7 @@ module "ec2_instance" {
 
   name = "node_1"
 
-  user_data_base64            = base64encode(local.user_data)
+  user_data_base64 = base64encode(local.user_data)
   user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = "t2.micro"
