@@ -25,7 +25,7 @@ States:
       States:
         Load Map:
           Type: Map
-          MaxConcurrency: 12
+          MaxConcurrency: 5
           ItemProcessor:
             ProcessorConfig:
               Mode: INLINE
@@ -54,7 +54,7 @@ States:
       States:
         Forecast Map:
           Type: Map
-          MaxConcurrency: 12
+          MaxConcurrency: 5
           ItemProcessor:
             ProcessorConfig:
               Mode: INLINE
