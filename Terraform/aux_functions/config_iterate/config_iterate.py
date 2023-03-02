@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     # This function makes parameters for both iso_ne and uscrn scrapers, for their next run iteration.
 
     print(event)
-`
+
     # to create a unique name for the next state machine iteration
     uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
     state_machine_arn = event['state_machine_arn']
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
     config = event['config']
 
     # making new params for the next state machine iteration
-    new_params = {}
+    new_params = dict()
 
     # areas stay the same
     if "areas" in old_params:
