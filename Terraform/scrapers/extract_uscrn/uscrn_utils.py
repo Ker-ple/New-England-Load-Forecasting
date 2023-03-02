@@ -97,8 +97,7 @@ SUBHOURLY_DTYPES = [
 
 def read_uscrn_subhourly(filename, start_date=None, end_date=None, **kwargs):
     default_vars_map = {
-        'WIND_1_5': 'wind_speed',
-        'WIND_FLAG': 'wind_flag'
+        'WIND_1_5': 'wind_speed'
         }
     variables_map = kwargs.get('variables_map', default_vars_map)
 
@@ -118,6 +117,10 @@ def read_uscrn_subhourly(filename, start_date=None, end_date=None, **kwargs):
     for val in [-99, -999, -9999]:
         # consider replacing with .replace([-99, -999, -9999])
         data = data.where(data != val, np.nan)
+
+    # Replacing invalid wind_speed values with nans.
+    data = data.loc[data['WIND_1_5'] == 0]
+    data['WIND_1_5'] = data['WIND_1_5'].where(data['WIND_FLAG'] == 0, np.nan)
 
     # The following lines do the following:
     # 1. get the station name.
@@ -145,6 +148,7 @@ def url_for_station(station_name, year):
     return hourly, subhourly
 
 def split_date(s,e):
+    # Some fancy string manipulation to split a date range into contiguous ranges that don't overlap with each other and don't span multiple years.
     splits = [[s,s[:4]+"1231"]]+ [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))]+[[e[:4] + "0101", e]]
     return [{
         'date_begin': split[0],
