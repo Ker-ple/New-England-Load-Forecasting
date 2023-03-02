@@ -12,8 +12,8 @@ Example JSON input:
         "date_end": "20230224"
     },
     "config": {
-        "repeat": "True"
-        "seconds_delta": "300"
+        "repeat": "True",
+        "seconds_delta": "172800"
     }
 }
 """
@@ -57,8 +57,8 @@ def lambda_handler(event, context):
     config['state_machine_arn'] = os.environ.get('STATE_MACHINE_ARN')
 
     dates = define_yyyymmdd_date_range(params['date_begin'], params['date_end'])
-    # a new lambda function is invoked every 60 days in consideration. each lambda is given equal share of dates to scrape.
-    num_lambdas = math.ceil(len(dates)/60)
+    # a new lambda function is invoked every 15 days in consideration. each lambda is given equal share of dates to scrape.
+    num_lambdas = math.ceil(len(dates)/15)
     # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
 
     payload = [

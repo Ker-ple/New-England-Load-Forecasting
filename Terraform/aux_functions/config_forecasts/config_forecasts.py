@@ -14,10 +14,10 @@ Example JSON input:
 {
     "params": {
         "areas": ["kingston", "durham"]
-    }
+    },
     "config": {
-        "repeat": True,
-        "seconds_delta": 3600
+        "repeat": "True",
+        "seconds_delta": "3600"
     }    
 }
 """

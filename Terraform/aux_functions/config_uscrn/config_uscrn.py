@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import math
 
 """
 Example JSON input:
@@ -21,7 +22,7 @@ Example JSON input:
     },
     "config": {
         "repeat": "True",
-        "seconds_delta": "86400"
+        "seconds_delta": "172800"
     }    
 }
 """
@@ -73,9 +74,7 @@ def lambda_handler(event, context):
     date_end = params['date_end']
 
     for area in params['areas']:
-        area = record['area'].lower()
-
-        stations = derive_stations(area)
+        stations = derive_stations(area.lower())
         dates = derive_dates(date_begin, date_end)
 
         for date in dates:
@@ -107,22 +106,19 @@ area_stations = {
 }
 
 def derive_dates(s, e):
-    print(event)
-
     # This function creates date ranges for the iso-ne scrapers.
 
     dates = define_yyyymmdd_date_range(s, e)
-    # a new lambda function is invoked every 90 days in consideration. each lambda is given equal share of dates to scrape.
-    num_lambdas = math.ceil(len(dates)/90)
+    # a new lambda function is invoked every 30 days in consideration. Each lambda is given equal share of dates to scrape.
+    num_lambdas = math.ceil(len(dates)/30)
     # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
-    return {
-        "records": [
+    return [
             {
                 'date_begin': datetime.strptime(x.tolist()[0], '%Y%m%d').strftime('%Y%m%d'), 
                 'date_end': datetime.strptime(x.tolist()[-1], '%Y%m%d').strftime('%Y%m%d')
             }
-            for x in np.array_split(dates, num_lambdas)]
-    }
+            for x in np.array_split(dates, num_lambdas)
+        ]
 
 def define_yyyymmdd_date_range(start, end):
     # We define a date range here because it simplifies assigning the number of lambdas.

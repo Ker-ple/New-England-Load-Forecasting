@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 """
 Example JSON input:
 {
-    "records": [
+    [
         {
             "latitude": 41.4747,
             "longitude": -71.5203,
@@ -67,33 +67,26 @@ def lambda_handler(event, context):
 
     results = list()
 
-    for record in event['records']:
-        try:
-            api_key = os.environ.get('PIRATE_WEATHER_AUTH')
-            base_url = os.environ.get('PIRATE_FORECAST_API')
+    for record in event:
+        api_key = os.environ.get('PIRATE_WEATHER_AUTH')
+        base_url = os.environ.get('PIRATE_FORECAST_API')
 
-            data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
-            data_json = data.to_dict('records')
+        data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
+        data_json = data.to_dict('records')
+        print(data_json[0])
 
-            for row in data_json:
-                cols = ', '.join(f'"{k}"' for k in row.keys())   
-                vals = ', '.join(f':{k}' for k in row.keys())
-                excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-                stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals})"""
-                conn.run(stmt, **row)
-            
-            results.append({
-                "input": record,
-                "script_name": os.path.basename(__file__),
-                "status": success
-            })
+        for row in data_json:
+            cols = ', '.join(f'"{k}"' for k in row.keys())   
+            vals = ', '.join(f':{k}' for k in row.keys())
+            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+            stmt = f"""INSERT INTO weather_forecasts ({cols}) VALUES ({vals})"""
+            conn.run(stmt, **row)
         
-        except Exception as e: 
-            results.append({
-                "input": record,
-                "script_name": os.path.basename(__file__),
-                "status": str(e)
-            })
+        results.append({
+            "input": record,
+            "script_name": os.path.basename(__file__),
+            "status": "success"
+        })
 
     return {
         "results": results
@@ -109,6 +102,7 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
         }
 
     variables_map = kwargs.get('variables_map', default_vars_map)
+    forecast_area = kwargs.get('forecast_area', None)
     raw_data = get_forecast_weather(latitude, longitude, base_url, api_key)
     data = extract_forecast_weather(raw_data, forecast_area, variables_map)
     return data
@@ -125,7 +119,7 @@ def extract_forecast_weather(raw_weather_data, forecast_area, variables_map):
     data['forecast_area'] = forecast_area
     data = data.rename(columns=variables_map)
     data = data.reset_index()
-    data = data.rename(columns={'index': 'forecasted_for'})
+    data = data.rename(columns={'time': 'forecasted_for'})
     data['forecasted_at'] = datetime.now(timezone.utc)
     
     return data

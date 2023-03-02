@@ -14,6 +14,13 @@ locals {
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
 
+  echo export DB_HOST="${module.rds.db_instance_address}" | sudo tee -a /etc/profile
+  echo export DB_NAME="${var.db_name}" | sudo tee -a /etc/profile
+  echo export DB_PASSWORD="${var.db_password}" | sudo tee -a /etc/profile
+  echo export DB_USER="${var.db_username}" | sudo tee -a /etc/profile
+  
+  echo "finished setting up"
+
   EOT
 }
 

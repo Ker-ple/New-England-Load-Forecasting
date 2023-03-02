@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 import boto3
+import json
 
 """
 Example JSON input:
@@ -24,7 +25,7 @@ OR
         "date_end": "20230224"
     },
     "config": {
-        "repeat": "True"
+        "repeat": "True",
         "seconds_delta": "300"
     }
 }
@@ -33,14 +34,20 @@ OR
 """
 Example JSON output:
 {   
-    "params": {
-        "areas": ["kingston", "durham"],
-        "date_begin": "20230207",
-        "date_end": "20230208"
-    },
-    "config": {
-        "repeat": True,
-        "seconds_delta": "86400"
+    "response": {
+        "executionArn": "arn:aws:states:us-east-1:485809471371:stateMachine:PIRATE",
+        "startDate": datetime(2023, 2, 25)
+    }
+    "invoke_input": {
+        "params": {
+            "areas": ["kingston", "durham"],
+            "date_begin": "20230207",
+            "date_end": "20230208"
+        },
+        "config": {
+            "repeat": True,
+            "seconds_delta": "86400"
+        }
     }   
 }
 """
@@ -50,9 +57,9 @@ def lambda_handler(event, context):
     # This function makes parameters for both iso_ne and uscrn scrapers, for their next run iteration.
 
     print(event)
-`
+
     # to create a unique name for the next state machine iteration
-    uid = datetime.now(timezone.utc).strftime('%Y%m%d, %H:%H:%S')
+    uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
     state_machine_arn = event['state_machine_arn']
     pipeline_name = state_machine_arn.split(':')[-1]
 
@@ -61,7 +68,7 @@ def lambda_handler(event, context):
     config = event['config']
 
     # making new params for the next state machine iteration
-    new_params = {}
+    new_params = dict()
 
     # areas stay the same
     if "areas" in old_params:
@@ -77,13 +84,15 @@ def lambda_handler(event, context):
         new_params['date_end'] = new_date_end.strftime('%Y%m%d')
 
     client = boto3.client('stepfunctions')
+    
     response = client.start_execution(
-        stateMachineArn=state_machine_arn,
+        stateMachineArn = state_machine_arn,
         name = pipeline_name+uid,
-        input = {
-        "params": new_params,
-        "config": config
-    })
+        input = json.dumps({
+            "params": new_params,
+            "config": config
+        })
+    )
 
     return {
         'response': response,

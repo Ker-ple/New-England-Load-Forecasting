@@ -50,39 +50,32 @@ conn.run(DDL)
 
 def lambda_handler(event, context):
     print(event)
-    results = list()
 
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
-    try:
-        data = get_data(event['date_begin'], event['date_end'], base_url, auth)
-        data_json = data.to_dict('records')
+    data = get_data(event['date_begin'], event['date_end'], base_url, auth)
+    data_json = data.to_dict('records')
 
-        # requests historical load forecast data for each YYYYMMDD date, then concats the results into a tall dataframe 
-        
-        for row in data_json:
-            cols = ', '.join(f'"{k}"' for k in row.keys())   
-            vals = ', '.join(f':{k}' for k in row.keys())
-            excluded = ', '.join(f'EXCLUDED.{k}' for k in row.keys())
-            stmt = f"""INSERT INTO iso_ne_load ({cols}) VALUES ({vals}) 
-                        ON CONFLICT (load_datetime) 
-                        DO UPDATE SET 
-                        ({cols}) = ({excluded});"""
-            conn.run(stmt, **row)
+    print(data_json[0])
 
-        results.append({
-            "input": event,
-            "script_name": os.path.basename(__file__),
-            "status": "success"
-        })
-        
-    except Exception as e:
-        results.append({
-            "input": event,
-            "script_name": os.path.basename(__file__),
-            "status": str(e)
-        })
+    # requests historical load forecast data for each YYYYMMDD date, then concats the results into a tall dataframe 
+    
+    for row in data_json:
+        cols = ', '.join(f'"{k}"' for k in row.keys())   
+        vals = ', '.join(f':{k}' for k in row.keys())
+        excluded = ', '.join(f'EXCLUDED.{k}' for k in row.keys())
+        stmt = f"""INSERT INTO iso_ne_load ({cols}) VALUES ({vals}) 
+                    ON CONFLICT (load_datetime) 
+                    DO UPDATE SET 
+                    ({cols}) = ({excluded});"""
+        conn.run(stmt, **row)
+
+    results = {
+        "input": event,
+        "script_name": os.path.basename(__file__),
+        "status": "success"
+    }
 
     # a success returns the .py file name and the first and last data point
     return {
@@ -93,11 +86,30 @@ def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
 def get_data(start_date, end_date, base_url, auth):
+    # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
     date_range = define_yyyymmdd_date_range(start_date, end_date)
 
+    # The following block of code allows for automatic retrying of queries that faile due to a RemoteProtocolError. 
+    # A request is made for each date in date_range, and failures are appended to a list 'retries'.
+    # date_range becomes retries after all requests in date_range have been made, and then requests are made for all dates in date_range.
+    # This process repeats 3 times at maximum.
     resp_list = list()
-    for date in date_range:
-        resp_list.append(httpx.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', headers=auth, timeout=None).json())
+    attempts = 0
+    with httpx.Client(headers=auth) as client:
+        while attempts < 3:
+            retries = list()
+            for date in date_range:
+                try:
+                    r = client.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', timeout=60)
+                    resp_list.append(r.json())
+                    print(f"response code for {date}: ", r)
+                # you might get this error when using httpx.Client, so we put the failed attempts in a list to try again later
+                except Exception:
+                    retries.append(date)
+                    print(f"RME for {date} ")
+            date_range = retries
+            attempts += 1 
+
     df_list = [pd.json_normalize(json['HourlyLoadForecasts']['HourlyLoadForecast'], sep='_') for json in resp_list]
     final_df = pd.concat(df_list, ignore_index=True, axis=0)
 

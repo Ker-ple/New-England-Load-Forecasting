@@ -1,7 +1,7 @@
 module "rds" {
   source = "terraform-aws-modules/rds/aws"
 
-  identifier = "testdb"
+  identifier = "iso-project-db"
 
   deletion_protection    = true
   engine                 = "postgres"

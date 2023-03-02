@@ -137,3 +137,17 @@ def read_uscrn_subhourly(filename, start_date=None, end_date=None, **kwargs):
     data['station_name'] = station_name
 
     return data
+
+def url_for_station(station_name, year):
+    subhourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/{year}/CRNS0101-05-{year}-{station_name}.txt"
+    hourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/{year}/CRNH0203-{year}-{station_name}.txt"
+
+    return hourly, subhourly
+
+def split_date(s,e):
+    splits = [[s,s[:4]+"1231"]]+ [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))]+[[e[:4] + "0101", e]]
+    return [{
+        'date_begin': split[0],
+        'date_end': split[-1]
+        } for split in splits
+    ]    

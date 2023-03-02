@@ -1,7 +1,7 @@
 Comment: State machine for the ISO data pipeline.
-StartAt: Config ISO
+StartAt: Config PirateWeather
 States:
-  Config ISO:
+  Config PirateWeather:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
@@ -21,10 +21,9 @@ States:
   Get PirateWeather:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
-    OutputPath: "$.Payload"
     Parameters: 
       Payload.$: "$"
-      FunctionName: ${pirate_weather_lambda_arn}:LATEST
+      FunctionName: ${pirate_weather_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -34,7 +33,7 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    InputPath: "$."
+    InputPath: "$.records"
     Next: Repeat?
     ResultPath: $.pirate_weather_results
   Repeat?:
