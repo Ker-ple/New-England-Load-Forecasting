@@ -4,6 +4,7 @@ from uscrn_utils import *
 import os
 import json
 import pandas as pd
+from datetime import datetime
 
 """
 Example JSON Input:
@@ -59,50 +60,48 @@ conn.run(DDL)
 def lambda_handler(event, context):
     print(event)
     results = list()
+    hourly_dfs = list()
+    subhourly_dfs = list()
 
-    year = pd.to_datetime(record['date_begin'], format='%Y%m%d').year
+    date_ranges = split_date(event['date_begin'], event['date_end'])
 
-    for station in event['station_names']:
-        try:
+    for date in date_ranges:
+        year = datetime.strptime(date['date_begin'], '%Y%m%d').year
 
+        for station in event['station_names']:
             hourly_url, subhourly_url = url_for_station(station, year)
 
             print("hourly_url: ", hourly_url, '\n', "subhourly_url: ", subhourly_url)
 
-            data_hourly = read_uscrn_hourly(hourly_url, event['date_begin'], event['date_end'])
-            data_subhourly = read_uscrn_subhourly(subhourly_url, event['date_begin'], event['date_end'])
-            data_joined = data_subhourly.merge(data_hourly, on=['weather_datetime', 'station_name'])
-            data_json = data_joined.to_dict('records')
+            data_hourly = read_uscrn_hourly(hourly_url, date['date_begin'], date['date_end'])
+            data_subhourly = read_uscrn_subhourly(subhourly_url, date['date_begin'], date['date_end'])
+            hourly_dfs.append(data_hourly)
+            subhourly_dfs.append(data_subhourly)
 
-            for row in data_json:
-                cols = ', '.join(f'"{k}"' for k in row.keys())   
-                vals = ', '.join(f':{k}' for k in row.keys())
-                excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-                stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
-                conn.run(stmt, **row)
+    all_hourly = pd.concat(hourly_dfs, ignore_index=True, axis=0)
+    all_subhourly = pd.concat(subhourly_dfs, ignore_index=True, axis=0)
 
-            results.append({
-                "input": event,
-                "station_name": station,
-                "script_name": os.path.basename(__file__),
-                "status": "success"
-            })
+    data_joined = all_subhourly.merge(all_hourly, on=['weather_datetime', 'station_name'])
+    data_json = data_joined.to_dict('records')
+    print(data_json[0])
+
+    print(data_json[0])
+
+    for row in data_json:
+        cols = ', '.join(f'"{k}"' for k in row.keys())   
+        vals = ', '.join(f':{k}' for k in row.keys())
+        excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
+        stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
+        conn.run(stmt, **row)
+
+    results.append({
+        "input": event,
+        "script_name": os.path.basename(__file__),
+        "status": "success"
+    })
+
+    return {
+        "results": results
+    }
         
-        except Exception as e:
-            results.append({
-                "input": event,
-                "station_name": station,
-                "script_name": os.path.basename(__file__),
-                "status": str(e)
-            })
-        
-        return {
-            "results": results
-        }
-        
 
-def url_for_station(station_name, year):
-    subhourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/{year}/CRNS0101-05-{year}-{station_name}.txt"
-    hourly = f"https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/{year}/CRNH0203-{year}-{station_name}.txt"
-
-    return hourly, subhourly
