@@ -7,6 +7,7 @@ module "extract_grid_forecast" {
   publish        = true
   create_package = false
   timeout        = 600
+  memory_size    = 2048
 
   ##################
   # Container Image
@@ -47,6 +48,7 @@ module "extract_grid_load" {
   create_package = false
   publish        = true
   timeout        = 600
+  memory_size    = 2048
 
   ##################
   # Container Image
@@ -87,6 +89,7 @@ module "uscrn_extract_weather" {
   create_package = false
   publish        = true
   timeout        = 600
+  memory_size    = 2048
 
   ##################
   # Container Image
@@ -125,6 +128,7 @@ module "pirate_extract_weather_forecasts" {
   create_package = false
   publish        = true
   timeout        = 600
+  memory_size    = 512
 
   ##################
   # Container Image
@@ -134,10 +138,10 @@ module "pirate_extract_weather_forecasts" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME         = module.rds.db_instance_address
+    DB_PASSWORD         = var.db_password
+    DB_USERNAME         = var.db_username
+    DB_NAME             = var.db_name
     PIRATE_WEATHER_AUTH = var.pirate_weather_apis_auth
     PIRATE_FORECAST_API = var.pirate_forecast_api
   }
@@ -174,8 +178,8 @@ module "config_forecasts" {
   package_type  = "Image"
   architectures = ["x86_64"]
 
- environment_variables = {
-    state_machine_arn = module.pirate_step_function.state_machine_arn
+  environment_variables = {
+    STATE_MACHINE_ARN = module.pirate_step_function.state_machine_arn
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -210,8 +214,8 @@ module "config_iso" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    state_machine_arn = module.iso_step_function.state_machine_arn
-  }  
+    STATE_MACHINE_ARN = module.iso_step_function.state_machine_arn
+  }
 
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
@@ -277,7 +281,7 @@ module "config_uscrn" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    state_machine_arn = module.uscrn_step_function.state_machine_arn
+    STATE_MACHINE_ARN = module.uscrn_step_function.state_machine_arn
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
