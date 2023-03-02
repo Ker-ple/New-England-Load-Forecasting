@@ -30,7 +30,7 @@ module "ec2_instance" {
 
   name = "node_1"
 
-  user_data_base64 = base64encode(local.user_data)
+  user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = "t2.micro"
