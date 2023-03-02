@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 
 HOURLY_HEADERS = (
     'WBANNO UTC_DATE UTC_TIME LST_DATE LST_TIME CRX_VN LONGITUDE LATITUDE '
@@ -34,9 +35,9 @@ station_id_name_dict = {
 
 def read_uscrn_hourly(filename, start_date=None, end_date=None, **kwargs):
     default_vars_map = {
-        'T_HR_AVG': 'avg_air_temp_hr',
+        'T_HR_AVG': 'air_temp',
         'P_CALC': 'ppt_total',
-        'RH_HR_AVG': 'relative_humidity_avg'
+        'RH_HR_AVG': 'relative_humidity'
         }
     variables_map = kwargs.get('variables_map', default_vars_map)
 
@@ -119,7 +120,6 @@ def read_uscrn_subhourly(filename, start_date=None, end_date=None, **kwargs):
         data = data.where(data != val, np.nan)
 
     # Replacing invalid wind_speed values with nans.
-    data = data.loc[data['WIND_1_5'] == 0]
     data['WIND_1_5'] = data['WIND_1_5'].where(data['WIND_FLAG'] == 0, np.nan)
 
     # The following lines do the following:
@@ -155,3 +155,64 @@ def split_date(s,e):
         'date_end': split[-1]
         } for split in splits
     ]    
+
+def get_apparent_temp(air_temp, rel_hum, wind_speed, temp_in_C = True, rel_hum_in_pct = False, wind_speed_in_ms = True, **kwargs)
+    # https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
+    ms_to_mph = 2.23694
+
+    df = pd.DataFrame()
+    df['wind_speed'] = wind_speed
+    df['relative_humidity'] = rel_hum
+    df['wind_speed'] = wind_speed
+
+    if wind_speed_in_ms:
+        df['wind_speed'] = df['wind_speed'] * ms_to_mph
+    if not rel_hum_in_pct:
+        df['relative_humidity'] = df['relative_humidity'] * 100
+    if temp_in_C:
+        df['air_temp'] = df['air_temp'] * 1.8 + 32
+
+    apparent_temp = df['air_temp']
+
+    if df['air_temp'] > 80:
+        apparent_temp = heat_index(df['air_temp'], df['relative_humidity'])
+    elif df['air_temp'] < 50:
+        apparent_temp = wind_chill(df['air_temp'], df['wind_speed'])
+
+    return (apparent_temp - 32) / 1.8
+
+def heat_index(air_temp, rel_hum):
+    c1 = -42.38
+    c2 = 2.049
+    c3 = 10.14
+    c4 = -0.224
+    c5 = -0.006838
+    c6 = -0.05482
+    c7 = 0.001228
+    c8 = 0.0008528
+    c9 = -0.00000199
+
+    apparent_temp = c1 \
+                    + c2 * air_temp \
+                    + c3 * rel_hum \
+                    + c4 * air_temp * rel_hum \
+                    + c5 * air_temp * air_temp \ 
+                    + c6 * rel_hum * rel_hum \
+                    + c7 * air_temp * air_temp * rel_hum \
+                    + c8 * air_temp * rel_hum * rel_hum \
+                    + c9 * air_temp * air_temp * rel_hum * rel_hum
+
+    return apparent_temp
+
+def wind_chill(air_temp, wind_speed):
+    c1 = 35.74
+    c2 = .6215
+    c3 = -35.75
+    c4 = .4275
+
+    apparent_temp = c1 \
+                    + c2 * air_temp \
+                    + c3 * math.pow(wind_speed, .16) \
+                    + c4 * air_temp * math.pow(wind_speed, .16)
+
+    return apparent_temp
