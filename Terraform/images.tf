@@ -79,11 +79,11 @@ module "docker_image_extract_uscrn" {
   platform    = "linux/amd64"
 }
 
-module "docker_image_extract_weather_forecast" {
+module "docker_image_extract_pirate" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.weather_forecast_lambda.id
+  ecr_repo        = random_pet.pirate_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -106,11 +106,11 @@ module "docker_image_extract_weather_forecast" {
   platform    = "linux/amd64"
 }
 
-module "docker_image_config_forecasts" {
+module "docker_image_config_pirate" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
   create_ecr_repo = true
-  ecr_repo        = random_pet.config_forecasts_lambda.id
+  ecr_repo        = random_pet.config_pirate_lambda.id
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -129,7 +129,7 @@ module "docker_image_config_forecasts" {
   })
 
   image_tag   = "2.0"
-  source_path = "./aux_functions/config_forecasts"
+  source_path = "./aux_functions/config_pirate"
   platform    = "linux/amd64"
 }
 
