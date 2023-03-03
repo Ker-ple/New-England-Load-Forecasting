@@ -1,0 +1,9 @@
+{
+    "params": {
+        "areas": ["kingston", "durham"]
+    },
+    "config": {
+        "repeat": "True",
+        "seconds_delta": "3600"
+    }    
+}
