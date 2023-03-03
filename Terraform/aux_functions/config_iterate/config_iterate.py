@@ -58,14 +58,14 @@ def lambda_handler(event, context):
 
     print(event)
 
-    # to create a unique name for the next state machine iteration
-    uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
-    state_machine_arn = event['state_machine_arn']
-    pipeline_name = state_machine_arn.split(':')[-1]
-
-    # getting the params and config of the current state machine execution 
+    # getting the params and config of the current state machine execution to set up the next iteration.
     old_params = event['params']
     config = event['config']
+
+    # to create a unique name for the next state machine iteration
+    uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
+    state_machine_arn = config['state_machine_arn']
+    pipeline_name = state_machine_arn.split(':')[-1]
 
     # making new params for the next state machine iteration
     new_params = dict()
