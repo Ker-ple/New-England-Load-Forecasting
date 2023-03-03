@@ -36,7 +36,7 @@ station_id_name_dict = {
 def read_uscrn_hourly(filename, start_date=None, end_date=None, **kwargs):
     default_vars_map = {
         'T_HR_AVG': 'air_temp',
-        'P_CALC': 'ppt_total',
+        'P_CALC': 'total_precipitation',
         'RH_HR_AVG': 'relative_humidity'
         }
     variables_map = kwargs.get('variables_map', default_vars_map)

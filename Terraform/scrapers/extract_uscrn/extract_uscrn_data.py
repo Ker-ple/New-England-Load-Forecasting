@@ -50,7 +50,7 @@ DDL = """CREATE TABLE IF NOT EXISTS weather_data (
     station_area VARCHAR,
 	air_temp REAL,
     apparent_temp REAL,
-	ppt_total REAL,
+	total_precipitation REAL,
 	relative_humidity REAL,
     wind_speed REAL,
 	UNIQUE(weather_datetime, station_name)
