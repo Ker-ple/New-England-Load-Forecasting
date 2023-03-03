@@ -57,8 +57,8 @@ def lambda_handler(event, context):
     config['state_machine_arn'] = os.environ.get('STATE_MACHINE_ARN')
 
     dates = define_yyyymmdd_date_range(params['date_begin'], params['date_end'])
-    # a new lambda function is invoked every 15 days in consideration. each lambda is given equal share of dates to scrape.
-    num_lambdas = math.ceil(len(dates)/15)
+    # a new lambda function is invoked every 30 days in consideration. each lambda is given equal share of dates to scrape.
+    num_lambdas = math.ceil(len(dates)/30)
     # returns first and last date of each sub-list is returned to save message space and because the invoked lambda functions can recreate the date range themselves.
 
     payload = [
