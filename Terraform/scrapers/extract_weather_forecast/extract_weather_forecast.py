@@ -54,7 +54,7 @@ DDL = """CREATE TABLE IF NOT EXISTS weather_forecasts (
 	air_temp REAL,
     wind_speed REAL,
     apparent_temp REAL,
-    ppt_total REAL,
+    total_precipitation REAL,
     relative_humidity REAL,
     forecast_area VARCHAR,
     UNIQUE(forecasted_at, forecasted_for, forecast_area)
@@ -97,7 +97,7 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
         'temperature': 'air_temp',
         'apparentTemperature': 'apparent_temp',
         'humidity': 'relative_humidity',
-        'precipAccumulation': 'ppt_total',
+        'precipAccumulation': 'total_precipitation',
         'windSpeed': 'wind_speed'
         }
 

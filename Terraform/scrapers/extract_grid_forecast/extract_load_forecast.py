@@ -89,7 +89,7 @@ def get_data(start_date, end_date, base_url, auth):
     # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
     date_range = define_yyyymmdd_date_range(start_date, end_date)
 
-    # The following block of code allows for automatic retrying of queries that faile due to a RemoteProtocolError. 
+    # The following block of code allows for automatic retrying of failed requests. 
     # A request is made for each date in date_range, and failures are appended to a list 'retries'.
     # date_range becomes retries after all requests in date_range have been made, and then requests are made for all dates in date_range.
     # This process repeats 3 times at maximum.
@@ -103,10 +103,10 @@ def get_data(start_date, end_date, base_url, auth):
                     r = client.get(url = base_url+'/hourlyloadforecast/day/'+date+'.json', timeout=60)
                     resp_list.append(r.json())
                     print(f"response code for {date}: ", r)
-                # you might get this error when using httpx.Client, so we put the failed attempts in a list to try again later
+                # you might get errors, so we put the failed attempts in a list to try again later
                 except Exception:
                     retries.append(date)
-                    print(f"RME for {date} ")
+                    print(f"Error for {date} ")
             date_range = retries
             attempts += 1 
 

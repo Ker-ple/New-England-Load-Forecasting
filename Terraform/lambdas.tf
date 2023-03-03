@@ -6,8 +6,8 @@ module "extract_grid_forecast" {
 
   publish        = true
   create_package = false
-  timeout        = 600
-  memory_size    = 256
+  timeout        = 900
+  memory_size    = 512
 
   ##################
   # Container Image
@@ -47,8 +47,8 @@ module "extract_grid_load" {
 
   create_package = false
   publish        = true
-  timeout        = 600
-  memory_size    = 256
+  timeout        = 900
+  memory_size    = 512
 
   ##################
   # Container Image
@@ -88,8 +88,8 @@ module "uscrn_extract_weather" {
 
   create_package = false
   publish        = true
-  timeout        = 600
-  memory_size    = 256
+  timeout        = 900
+  memory_size    = 512
 
   ##################
   # Container Image
@@ -127,8 +127,8 @@ module "pirate_extract_weather_forecasts" {
 
   create_package = false
   publish        = true
-  timeout        = 600
-  memory_size    = 256
+  timeout        = 900
+  memory_size    = 384
 
   ##################
   # Container Image
@@ -240,6 +240,7 @@ module "config_iterate" {
   create_package = false
   publish        = true
   timeout        = 600
+
 
   ##################
   # Container Image

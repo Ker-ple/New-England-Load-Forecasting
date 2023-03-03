@@ -31,17 +31,20 @@ Example JSON input:
 Example JSON output:
 {
     "records": [
-        {
+        {   
+            "area": "kingston",
             "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
             "date_begin": "20220811",
             "date_end": "20221108"
         },
-        {
+        {   
+            "area": "durham",
             "station_names": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
             "date_begin": "20220811",
             "date_end": "20221108"
         },
-        {
+        {   
+            "area": "kingston",
             "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
             "date_begin": "20221108",
             "date_end": "20220206"
@@ -80,6 +83,7 @@ def lambda_handler(event, context):
         for date in dates:
 
             message = {
+                'area': area.lower(),
                 'station_names': stations,
                 'date_begin': date['date_begin'],
                 'date_end': date['date_end']
@@ -94,16 +98,16 @@ def lambda_handler(event, context):
         }
 
 def derive_stations(area):
-    return area_stations[area]
+    area_stations_dict = {
+            "durham": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
+            "kingston": ["RI_Kingston_1_NW", "RI_Kingston_1_W"]    
+        }
+    return area_stations_dict[area]
 
 # The following names are gotten from the uscrn website for the associated stations:
 # e.g. https://www1.ncdc.noaa.gov/pub/data/uscrn/products/hourly02/2023/
 
-area_stations = {
-    #"boston": [None],
-    "durham": ["NH_Durham_2_N", "NH_Durham_2_SSW"],
-    "kingston": ["RI_Kingston_1_NW", "RI_Kingston_1_W"]    
-}
+
 
 def derive_dates(s, e):
     # This function creates date ranges for the iso-ne scrapers.

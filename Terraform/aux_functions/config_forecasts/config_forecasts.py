@@ -57,14 +57,12 @@ def lambda_handler(event, context):
     config['state_machine_arn'] = os.environ.get('STATE_MACHINE_ARN')
 
     for area in params['areas']:
-        area = area.lower()
-
-        latitude, longitude = derive_latlong(area)
+        latitude, longitude = derive_latlong(area.lower())
 
         message = {
             'latitude': latitude,
             'longitude': longitude,
-            'area': area
+            'area': area.lower()
         }
 
         payload.append(message)

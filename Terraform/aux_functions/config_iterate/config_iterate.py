@@ -58,14 +58,14 @@ def lambda_handler(event, context):
 
     print(event)
 
-    # to create a unique name for the next state machine iteration
-    uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
-    state_machine_arn = event['state_machine_arn']
-    pipeline_name = state_machine_arn.split(':')[-1]
-
-    # getting the params and config of the current state machine execution 
+    # getting the params and config of the current state machine execution to set up the next iteration.
     old_params = event['params']
     config = event['config']
+
+    # to create a unique name for the next state machine iteration
+    uid = datetime.now(timezone.utc).strftime('%Y%m%d-%H%H%S')
+    state_machine_arn = config['state_machine_arn']
+    pipeline_name = state_machine_arn.split(':')[-1]
 
     # making new params for the next state machine iteration
     new_params = dict()
@@ -79,6 +79,7 @@ def lambda_handler(event, context):
         old_date_end = datetime.strptime(old_params['date_end'], '%Y%m%d')
         seconds_delta = int(config['seconds_delta'])
         new_date_begin = old_date_end + timedelta(days = 1)
+        # Because our requests include the end date as part of the date to request, seconds_delta will have to be 0 if we want to query everyday.
         new_date_end = new_date_begin + timedelta(seconds = seconds_delta)
         new_params['date_begin'] = new_date_begin.strftime('%Y%m%d')
         new_params['date_end'] = new_date_end.strftime('%Y%m%d')
