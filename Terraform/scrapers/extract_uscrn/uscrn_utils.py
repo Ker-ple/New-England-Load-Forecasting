@@ -58,6 +58,9 @@ def read_uscrn_hourly(filename, start_date=None, end_date=None, **kwargs):
         # consider replacing with .replace([-99, -999, -9999])
         data = data.where(data != val, np.nan)
 
+    # Replacing erroneous data with nan as per USCRN specifications.
+    data['RH_HR_AVG'] = data['RH_HR_AVG'].where(data['RH_HR_AVG_FLAG'] == 0, np.nan)    
+
     # The following lines do the following:
     # 1. get the station name.
     # 2. filter those columns, as defined in the variables_map kwarg keys.
@@ -149,35 +152,40 @@ def url_for_station(station_name, year):
 
 def split_date(s,e):
     # Some fancy string manipulation to split a date range into contiguous ranges that don't overlap with each other and don't span multiple years.
-    splits = [[s,s[:4]+"1231"]]+ [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))]+[[e[:4] + "0101", e]]
-    return [{
-        'date_begin': split[0],
-        'date_end': split[-1]
-        } for split in splits
-    ]    
+    if s[3] != e[3]:
+        splits = [[s,s[:4]+"1231"]]+ [['%s0101'%(str(i)), '%s1231'%(str(i))] for i in range(int(s[:4])+1,int(e[:4]))] +[[e[:4] + "0101", e]]
 
-def get_apparent_temp(air_temp, rel_hum, wind_speed, temp_in_C = True, rel_hum_in_pct = False, wind_speed_in_ms = True, **kwargs)
+        return [{
+            'date_begin': split[0],
+            'date_end': split[-1]
+            } for split in splits
+        ]    
+    else:
+        return [{
+            'date_begin': s,
+            'date_end': e
+        }]
+    
+
+def get_apparent_temp(air_temp, rel_hum, wind_speed, temp_in_C = True, rel_hum_in_pct = True, wind_speed_in_ms = True, **kwargs):
     # https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
     ms_to_mph = 2.23694
 
     df = pd.DataFrame()
-    df['wind_speed'] = wind_speed
-    df['relative_humidity'] = rel_hum
-    df['wind_speed'] = wind_speed
 
     if wind_speed_in_ms:
-        df['wind_speed'] = df['wind_speed'] * ms_to_mph
+        wind_speed = wind_speed * ms_to_mph
     if not rel_hum_in_pct:
-        df['relative_humidity'] = df['relative_humidity'] * 100
+        rel_hum = rel_hum * 100
     if temp_in_C:
-        df['air_temp'] = df['air_temp'] * 1.8 + 32
+        air_temp = air_temp * 1.8 + 32
 
-    apparent_temp = df['air_temp']
+    apparent_temp = air_temp
 
-    if df['air_temp'] > 80:
-        apparent_temp = heat_index(df['air_temp'], df['relative_humidity'])
-    elif df['air_temp'] < 50:
-        apparent_temp = wind_chill(df['air_temp'], df['wind_speed'])
+    if air_temp > 80:
+        apparent_temp = heat_index(air_temp, rel_hum)
+    elif air_temp < 50:
+        apparent_temp = wind_chill(air_temp, wind_speed)
 
     return (apparent_temp - 32) / 1.8
 
@@ -196,7 +204,7 @@ def heat_index(air_temp, rel_hum):
                     + c2 * air_temp \
                     + c3 * rel_hum \
                     + c4 * air_temp * rel_hum \
-                    + c5 * air_temp * air_temp \ 
+                    + c5 * air_temp * air_temp \
                     + c6 * rel_hum * rel_hum \
                     + c7 * air_temp * air_temp * rel_hum \
                     + c8 * air_temp * rel_hum * rel_hum \
