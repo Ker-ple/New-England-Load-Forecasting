@@ -7,7 +7,7 @@ from datetime import datetime
 """
 Example JSON Input:
 {   
-    "area": "kingston"
+    "area": "kingston",
     "station_names": ["RI_Kingston_1_NW", "RI_Kingston_1_W"],
     "date_begin": "20220811",
     "date_end": "20230224"
@@ -85,8 +85,6 @@ def lambda_handler(event, context):
     data_joined['apparent_temp'] = data_joined.apply(lambda x: get_apparent_temp(x['air_temp'], x['relative_humidity'], x['wind_speed']), axis=1)
     data_joined['station_area'] = event['area']
     data_json = data_joined.to_dict('records')
-    print(data_json[0])
-
     print(data_json[0])
 
     for row in data_json:
