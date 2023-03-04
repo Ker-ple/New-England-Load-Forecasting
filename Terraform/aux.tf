@@ -59,11 +59,11 @@ resource "random_pet" "uscrn_lambda" {
   length = 2
 }
 
-resource "random_pet" "weather_forecast_lambda" {
+resource "random_pet" "pirate_lambda" {
   length = 2
 }
 
-resource "random_pet" "config_forecasts_lambda" {
+resource "random_pet" "config_pirate_lambda" {
   length = 2
 }
 

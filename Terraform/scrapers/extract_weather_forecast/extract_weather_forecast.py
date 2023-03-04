@@ -6,21 +6,19 @@ import pg8000.native
 from datetime import datetime, timezone
 
 """
-Example JSON input:
-{
-    [
-        {
-            "latitude": 41.4747,
-            "longitude": -71.5203,
-            "area": "kingston"
-        },
-        {
-            "latitude": 43.1339,
-            "longitude": -70.9264,
-            "area": "durham"
-        }   
-    ]
-}
+Example array input:
+[
+    {
+        "latitude": 41.4747,
+        "longitude": -71.5203,
+        "area": "kingston"
+    },
+    {
+        "latitude": 43.1339,
+        "longitude": -70.9264,
+        "area": "durham"
+    }   
+]
 """
 
 """

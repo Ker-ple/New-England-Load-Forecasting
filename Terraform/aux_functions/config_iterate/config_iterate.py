@@ -79,8 +79,8 @@ def lambda_handler(event, context):
         old_date_end = datetime.strptime(old_params['date_end'], '%Y%m%d')
         seconds_delta = int(config['seconds_delta'])
         new_date_begin = old_date_end + timedelta(days = 1)
-        # Because our requests include the end date as part of the date to request, seconds_delta will have to be 0 if we want to query everyday.
-        new_date_end = new_date_begin + timedelta(seconds = seconds_delta)
+        # Because our requests include the end date as part of the date to request, days will have to be 0 if we want to query everyday.
+        new_date_end = new_date_begin + timedelta(days = 0)
         new_params['date_begin'] = new_date_begin.strftime('%Y%m%d')
         new_params['date_end'] = new_date_end.strftime('%Y%m%d')
 

@@ -2,12 +2,12 @@
 locals {
   config_iterate_lambda_arn   = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.config_iterate_lambda.id}-lambda-from-container-image"
   config_uscrn_lambda_arn     = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.config_uscrn_lambda.id}-lambda-from-container-image"
-  config_forecasts_lambda_arn = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.config_forecasts_lambda.id}-lambda-from-container-image"
+  config_forecasts_lambda_arn = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.config_pirate_lambda.id}-lambda-from-container-image"
   config_iso_lambda_arn       = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.config_iso_lambda.id}-lambda-from-container-image"
   iso_load_lambda_arn         = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.iso_load_lambda.id}-lambda-from-container-image"
   iso_forecast_lambda_arn     = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.iso_forecast_lambda.id}-lambda-from-container-image"
   uscrn_lambda_arn            = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.uscrn_lambda.id}-lambda-from-container-image"
-  pirate_weather_lambda_arn   = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.weather_forecast_lambda.id}-lambda-from-container-image"
+  pirate_weather_lambda_arn   = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.pirate_lambda.id}-lambda-from-container-image"
 }
 
 module "iso_step_function" {

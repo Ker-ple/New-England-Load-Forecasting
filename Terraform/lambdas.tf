@@ -122,7 +122,7 @@ module "uscrn_extract_weather" {
 module "pirate_extract_weather_forecasts" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.weather_forecast_lambda.id}-lambda-from-container-image"
+  function_name = "${random_pet.pirate_lambda.id}-lambda-from-container-image"
   description   = "Extracts weather forecasts via PirateWeather API."
 
   create_package = false
@@ -133,7 +133,7 @@ module "pirate_extract_weather_forecasts" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_extract_weather_forecast.image_uri
+  image_uri     = module.docker_image_extract_pirate.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -161,10 +161,10 @@ module "pirate_extract_weather_forecasts" {
 
 }
 
-module "config_forecasts" {
+module "config_pirate" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.config_forecasts_lambda.id}-lambda-from-container-image"
+  function_name = "${random_pet.config_pirate_lambda.id}-lambda-from-container-image"
   description   = "Configures weather forecast params and the lambdas they're ingested by."
 
   create_package = false
@@ -174,7 +174,7 @@ module "config_forecasts" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_config_forecasts.image_uri
+  image_uri     = module.docker_image_config_pirate.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -262,6 +262,23 @@ module "config_iterate" {
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
   number_of_policies = 4
+
+  attach_policy_jsons = true
+  policy_jsons = [
+    <<-EOT
+      {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Effect": "Allow",
+                  "Action": [ "states:StartExecution" ],
+                  "Resource": [ "arn:aws:states:*:*:stateMachine:*" ]
+              }
+          ]
+      }
+    EOT
+  ]
+  number_of_policy_jsons = 1
 }
 
 module "config_uscrn" {
