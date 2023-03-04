@@ -4,12 +4,14 @@ import json
 import os
 import pg8000.native
 from datetime import datetime, timezone, timedelta
+import itertools
 
 """
 Example JSON input:
 {
-    "date_begin": "20220811",
-    "date_end": "20220909"
+    'date_begin': '20220221', 
+    'date_end': '20220308', 
+    'loc_id': '4001'
 }
 """
 
@@ -19,9 +21,10 @@ Example JSON output:
     "results": [
         {   
             "input": {
-                "date_begin": "20220811",
-                "date_end": "20220909"
-            }
+                'date_begin': '20220221', 
+                'date_end': '20220308', 
+                'loc_id': '4001'
+            },
             "script_name": "extract_grid_load.py",
             "status": "success"
         }
@@ -48,13 +51,14 @@ DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
 
 conn.run(DDL)
 
+base_url = os.environ.get('ISO_NE_API')
+auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
+
 def lambda_handler(event, context):
     print(event)
-
-    base_url = os.environ.get('ISO_NE_API')
-    auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
-
-    data = get_data(event['date_begin'], event['date_end'], base_url, auth)
+    
+    raw_data = get_data(event['date_begin'], event['date_end'], event['loc_id'])
+    data = clean_data(raw_data)
     data_json = data.to_dict('records')
     print(data_json[0])
     
@@ -83,9 +87,10 @@ def lambda_handler(event, context):
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
-def get_data(start_date, end_date, base_url, auth):
+def get_load(date_begin, date_end, loc_id):
     # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
-    date_range = define_yyyymmdd_date_range(start_date, end_date)
+    # starts by building the range of dates to query    
+    date_range = define_yyyymmdd_date_range(date_begin, date_end)
 
     # The following block of code allows for automatic retrying of failed requests. 
     # A request is made for each date in date_range, and failures are appended to a list 'retries'.
@@ -98,22 +103,26 @@ def get_data(start_date, end_date, base_url, auth):
             retries = list()
             for date in date_range:
                 try:
-                    r = client.get(url = base_url+'/hourlysysload/day/'+date+'.json', timeout=60)
+                    r = client.get(url = base_url+'realtimehourlydemand/day/'+date+'/location/'+loc_id+'/.json', timeout=None)
                     resp_list.append(r.json())
-                    print(f"response code for {date}: ", r)
+                    print(f"response code for {loc_id} @ {date}: ", r.status_code)
                 # you might get errors, so we put the failed attempts in a list to try again later
                 except Exception:
+                    print(f"error for {loc_id} @ {date}")
                     retries.append(date)
-                    print(f"RME for {date} ")
-            date_range = retries
-            attempts += 1   
+                    continue
+            date_range = retries   
+            attempts += 1
 
-    df_list = [pd.json_normalize(json['HourlySystemLoads']['HourlySystemLoad'], sep='_') for json in resp_list]
-    final_df = pd.concat(df_list, ignore_index=True, axis=0)
+    return resp_list
+
+def clean_data(json_list):
+    # cleans result of get_load. 
+    df_list = [pd.json_normalize(json['HourlyRtDemands']['HourlyRtDemand'], sep='_') for json in json_list]
+    df = pd.concat(df_list, ignore_index=True, axis=0)
 
     # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
-    final_df = final_df[['BeginDate', 'Load', 'NativeLoad']]
-    final_df = final_df.rename({'Load': 'actual_load_mw', 'NativeLoad': 'native_load_mw', 'BeginDate': 'load_datetime'}, axis=1)
-    final_df = final_df.round({'actual_load_mw': 0, 'native_load_mw': 0})
-    final_df = final_df.astype({'actual_load_mw': 'int16', 'native_load_mw': 'int16'})
-    return final_df
+    df = df.rename({'Load': 'actual_load_mw', 'BeginDate': 'load_datetime'}, axis=1)
+    return df
+
+def 
