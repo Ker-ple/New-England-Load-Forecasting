@@ -133,7 +133,7 @@ module "pirate_extract_weather_forecasts" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_config_pirate.image_uri
+  image_uri     = module.docker_image_extract_pirate.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
@@ -262,6 +262,23 @@ module "config_iterate" {
     "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
   ]
   number_of_policies = 4
+
+  attach_policy_jsons = true
+  policy_jsons = [
+    <<-EOT
+      {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Effect": "Allow",
+                  "Action": [ "states:StartExecution" ],
+                  "Resource": [ "arn:aws:states:*:*:stateMachine:*" ]
+              }
+          ]
+      }
+    EOT
+  ]
+  number_of_policy_jsons = 1
 }
 
 module "config_uscrn" {
