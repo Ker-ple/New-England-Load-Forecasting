@@ -45,21 +45,6 @@ conn = pg8000.native.Connection(
         port = 5432
     )
 
-DDL = """CREATE TABLE IF NOT EXISTS weather_forecasts (
-	forecast_id SERIAL PRIMARY KEY,
-	forecasted_at TIMESTAMP WITH TIME ZONE,
-    forecasted_for TIMESTAMP WITH TIME ZONE,
-	air_temp REAL,
-    wind_speed REAL,
-    apparent_temp REAL,
-    total_precipitation REAL,
-    relative_humidity REAL,
-    forecast_area VARCHAR,
-    UNIQUE(forecasted_at, forecasted_for, forecast_area)
-	);"""
-
-conn.run(DDL)
-
 def lambda_handler(event, context):
     print(event)
 

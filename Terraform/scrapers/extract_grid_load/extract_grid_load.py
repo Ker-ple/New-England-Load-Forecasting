@@ -40,24 +40,13 @@ conn = pg8000.native.Connection(
         port = 5432
     )
 
-DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
-    load_id SERIAL PRIMARY KEY,
-    load_datetime TIMESTAMP WITH TIME ZONE,
-    actual_load_mw INTEGER, 
-    forecast_load_mw INTEGER,
-    native_load_mw INTEGER,
-    UNIQUE(load_datetime)
-    );"""
-
-conn.run(DDL)
-
 base_url = os.environ.get('ISO_NE_API')
 auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
 def lambda_handler(event, context):
     print(event)
     
-    raw_data = get_data(event['date_begin'], event['date_end'], event['loc_id'])
+    raw_data = get_load(event['date_begin'], event['date_end'], event['loc_id'], base_url=base_url, auth=auth)
     data = clean_data(raw_data)
     data_json = data.to_dict('records')
     print(data_json[0])
@@ -87,7 +76,7 @@ def lambda_handler(event, context):
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
-def get_load(date_begin, date_end, loc_id):
+def get_load(date_begin, date_end, loc_id, base_url, auth):
     # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
     # starts by building the range of dates to query    
     date_range = define_yyyymmdd_date_range(date_begin, date_end)

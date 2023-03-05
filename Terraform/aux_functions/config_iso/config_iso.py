@@ -101,3 +101,4 @@ def lambda_handler(event, context):
 def define_yyyymmdd_date_range(start, end):
     # We define a date range here because it simplifies assigning the number of lambdas.
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
+

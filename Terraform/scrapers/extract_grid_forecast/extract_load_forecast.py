@@ -8,8 +8,9 @@ from datetime import datetime, timezone, timedelta
 """
 Example JSON input:
 {
-    "date_begin": "20220811",
-    "date_end": "20220909"
+    'date_begin': '20220221', 
+    'date_end': '20220308', 
+    'loc_id': '4001'
 }
 """
 
@@ -19,9 +20,10 @@ Example JSON output:
     "results": [
         {   
             "input": {
-                "date_begin": "20220811",
-                "date_end": "20220909"
-            }
+                'date_begin': '20220221', 
+                'date_end': '20220308', 
+                'loc_id': '4001'
+            },
             "script_name": "extract_load_forecast.py",
             "status": "success"
         }
@@ -37,24 +39,12 @@ conn = pg8000.native.Connection(
         port = 5432
     )
 
-DDL = """CREATE TABLE IF NOT EXISTS iso_ne_load (
-    load_id SERIAL PRIMARY KEY,
-    load_datetime TIMESTAMP WITH TIME ZONE,
-    actual_load_mw INTEGER, 
-    forecast_load_mw INTEGER,
-    native_load_mw INTEGER,
-    UNIQUE(load_datetime)
-    );"""
-
-conn.run(DDL)
-
 def lambda_handler(event, context):
     print(event)
-
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
 
-    raw_data = get_forecasts(event['date_begin'], event['date_end'], base_url, auth)
+    raw_data = get_forecast(event['date_begin'], event['date_end'], base_url=base_url, auth=auth)
     data = clean_data(raw_data)
     data_json = data.to_dict('records')
 
@@ -86,7 +76,7 @@ def lambda_handler(event, context):
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
-def get_forecast(date_begin, date_end, loc_id):
+def get_forecast(date_begin, date_end, base_url, auth):
     # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
     # starts by building the range of dates to query    
     date_range = define_yyyymmdd_date_range(date_begin, date_end)
@@ -104,10 +94,10 @@ def get_forecast(date_begin, date_end, loc_id):
                 try:
                     r = client.get(url = base_url+'/reliabilityregionloadforecast/day/'+date+'/all/.json', timeout=None)
                     resp_list.append(r.json())
-                    print(f"response code for {loc_id} @ {date}: ", r.status_code)
+                    print(f"response code for {date}: ", r.status_code)
                 # you might get errors, so we put the failed attempts in a list to try again later
                 except Exception:
-                    print(f"error for {loc_id} @ {date}")
+                    print(f"error for {date}")
                     retries.append(date)
                     continue
             date_range = retries   
@@ -122,8 +112,5 @@ def clean_data(json_list):
 
     # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
     df = df[['BeginDate', 'CreationDate', 'ReliabilityRegion', 'LoadMw', 'ReliabilityRegionLoadPercentage']]
-    df = df.rename({'Load': 'actual_load_mw', 'NativeLoad': 'native_load_mw', 'BeginDate': 'load_datetime'}, axis=1)
-    df = df.round({'actual_load_mw': 0, 'native_load_mw': 0})
-    df = df.astype({'actual_load_mw': 'int16', 'native_load_mw': 'int16'})
     return df
     
