@@ -4,6 +4,6 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-COPY extract_weather_forecast.py ${LAMBDA_TASK_ROOT}
+COPY extract_grid_load.py ${LAMBDA_TASK_ROOT}
 
-CMD [ "extract_weather_forecast.lambda_handler" ]
+CMD [ "extract_grid_load.lambda_handler" ]

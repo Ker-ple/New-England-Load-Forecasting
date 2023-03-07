@@ -1,19 +1,12 @@
 import pandas as pd
 import pg8000.native
+from itertools import chain
 
 """
 Example JSON input:
-{   
-    "records": [
-        {
-            "state": "MA",
-            "date_begin": "20220221",
-            "date_end": "20230221"
-        },
-        .
-        .
-        .
-    ] 
+{  
+    "date_begin": "20220221",
+    "date_end": "20230221"
 }
 """
 
@@ -43,24 +36,34 @@ conn = pg8000.native.Connection(
 def lambda_handler(event, context):
     print(event)
     payload = list()
+    stations_dict = {
+        'MA': ['BOS','ORH','EWB','ACK','AQW','BAF','BED','BVY','CEF','CQX','FIT','FMH','GHG','HYA','LWM','MVY','ORE','OWD','PSF','PVC','PYM','TAN'],
+        'ME': ['40B','8B0','AUG','BGR','BHB','CAR','FVE','GNR','HUL','IWI','IZG','LEW','MLT','NHZ','PQI','PWM','RKD','SFM','WVL'],
+        'RI': ['BID','OQU','PVD','SFZ','UUU','WST'],
+        'CT': ['BDL','BDR','DXR','GON','HFD','HVN','IJD','MMK','OXC','SNC'],
+        'NH': ['1P1','AFN','ASH','BML','CON','DAW','EEN','HIE','LCI','LEB','MHT','MWN','PSM'],
+        'VT': ['1V4','6B0','BTV','CDA','DDH','EFK','FSO','MPV','MVL','RUT','VSF']
+    }
 
-    for record in event:
-        station_ids = derive_station_ids(record['state'])
-        data = get_data(station_ids)
-        cleaned_data = clean_data(data)
-        cleaned_data['station_area'] = area.lower()
-        data_json = cleaned_data.to_dict('records')
-        print(data_json[0])
-        for row in data_json:
-            cols = ', '.join(f'"{k}"' for k in row.keys())   
-            vals = ', '.join(f':{k}' for k in row.keys())
-            excluded = ', '.join(f'"EXCLUDED.{k}"' for k in row.keys())
-            stmt = f"""INSERT INTO weather_data ({cols}) VALUES ({vals});"""
-            conn.run(stmt, **row)
+    station_ids = list(chain(*stations_dict.values()))
+    data = get_data(event['date_begin'], event['date_end'], station_ids)
+    cleaned_data = clean_data(data)
+    data_json = cleaned_data.to_dict('records')
+
+    print(data_json[0])
+    for row in data_json:
+        cols = ', '.join(f'"{k}"' for k in row.keys())   
+        vals = ', '.join(f':{k}' for k in row.keys())
+        vals += ', :(SELECT ())'
+        stmt = f"""INSERT INTO weather_historical ({cols}) VALUES ({vals});"""
+        conn.run(stmt, **row)
+
+    return 0
 
 def get_data(s, e, stations):
     s = datetime.datetime.strptime(s, '%Y%m%d')
     e = datetime.datetime.strptime(e, '%Y%m%d')
+    e = e - datetime.timedelta(days=1)
     noaa_url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
     for station in stations:
         noaa_url += f"station={station}&"
@@ -117,13 +120,3 @@ def clean_data(raw_data):
     cols = [col for col in t.columns if col not in ['station_name', 'weather_datetime', 'longitude', 'latitude']]
     data[cols] = data[cols].round(2)
     return data 
-
-def derive_station_ids(state):
-    stations_dict = {
-        'MA': ['BOS','ORH','EWB','ACK','AQW','BAF','BED','BVY','CEF','CQX','FIT','FMH','GHG','HYA','LWM','MVY','ORE','OWD','PSF','PVC','PYM','TAN'],
-        'RI': ['BID','OQU','PVD','SFZ','UUU','WST'],
-        'CT': ['BDL','BDR','DXR','GON','HFD','HVN','IJD','MMK','OXC','SNC'],
-        'NH': ['1P1','AFN','ASH','BML','CON','DAW','EEN','HIE','LCI','LEB','MHT','MWN','PSM'],
-        'VT': ['1V4','6B0','BTV','CDA','DDH','EFK','FSO','MPV','MVL','RUT','VSF']
-    }
-    return stations_dict[state]

@@ -4,6 +4,8 @@ import json
 import os
 import pg8000.native
 from datetime import datetime, timezone
+import aiometer
+from time import time
 
 """
 Example array input:
@@ -52,7 +54,7 @@ def lambda_handler(event, context):
 
     for record in event:
         api_key = os.environ.get('PIRATE_WEATHER_AUTH')
-        base_url = os.environ.get('PIRATE_FORECAST_API')
+        base_url = os.environ.get('PIRATE_HISTORIC_API')
 
         data = get_data(record['latitude'], record['longitude'], base_url=base_url, api_key=api_key, forecast_area=record['area'])    
         data_json = data.to_dict('records')
@@ -75,6 +77,22 @@ def lambda_handler(event, context):
         "results": results
     }
 
+def make_urls()
+
+async def scrape(url, client):
+    response = await client.get(url)
+    return response
+
+async def get_data(urls, client):
+    _start = time()
+    results = await aiometer.run_on_each(
+        scrape,
+        urls,
+        max_per_second = 50
+    )
+    print(f"finished {len(urls)} requests in {time() - _start:.2f} seconds")
+    return results
+
 def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
         'temperature': 'air_temp',
@@ -91,6 +109,7 @@ def get_data(latitude, longitude, base_url, api_key, **kwargs):
     return data
 
 def get_forecast_weather(latitude, longitude, base_url, api_key):
+    with httpx.AsyncClient() as client:
     resp = httpx.get(url=base_url+api_key+'/'+str(latitude)+','+str(longitude)+'?exclude=currently,minutely,daily&extend=hourly&units=si', timeout=None)
     return resp.text
 

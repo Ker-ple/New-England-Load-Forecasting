@@ -1,12 +1,12 @@
-Comment: State machine for the USCRN data pipeline.
-StartAt: Config USCRN
+Comment: State machine for the ASOS data pipeline.
+StartAt: Config ASOS
 States:
-  Config USCRN:
+  Config ASOS:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: ${config_uscrn_lambda_arn}:$LATEST
+      FunctionName: ${config_asos_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -24,15 +24,15 @@ States:
     ItemProcessor:
       ProcessorConfig:
         Mode: INLINE
-      StartAt: Get USCRN
+      StartAt: Get ASOS
       States: 
-        Get USCRN:
+        Get ASOS:
           Type: Task
           Resource: arn:aws:states:::lambda:invoke
           OutputPath: "$.Payload"
           Parameters: 
             Payload.$: "$"
-            FunctionName: ${uscrn_lambda_arn}:$LATEST
+            FunctionName: ${asos_lambda_arn}:$LATEST
           Retry:
           - ErrorEquals:
             - Lambda.ServiceException
@@ -45,7 +45,7 @@ States:
           End: true
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: $.uscrn_results
+    ResultPath: $.asos_results
   Repeat?:
     Type: Choice
     Choices:

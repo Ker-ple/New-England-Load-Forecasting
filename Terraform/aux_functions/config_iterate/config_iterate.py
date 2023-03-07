@@ -70,15 +70,11 @@ def lambda_handler(event, context):
     # making new params for the next state machine iteration
     new_params = dict()
 
-    # areas stay the same
-    if "areas" in old_params:
-        new_params['areas'] = old_params['areas']
-
     # have next iteration query starting one day after end of current query
     if "date_end" in old_params:
         old_date_end = datetime.strptime(old_params['date_end'], '%Y%m%d')
         seconds_delta = int(config['seconds_delta'])
-        new_date_begin = old_date_end + timedelta(days = 1)
+        new_date_begin = old_date_end
         # Because our requests include the end date as part of the date to request, days will have to be 0 if we want to query everyday.
         new_date_end = new_date_begin + timedelta(days = 0)
         new_params['date_begin'] = new_date_begin.strftime('%Y%m%d')
