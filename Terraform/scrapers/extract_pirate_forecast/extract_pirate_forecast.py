@@ -24,19 +24,22 @@ def lambda_handler(event, context):
         lat_longs.append(row)
     
     for row in lat_longs:
-        lat, lon = row[0], row[1]
-        data = get_data(lat, lon, base_url=base_url, api_key=api_key)
-        data['longitude'] = lon
-        data['latitude'] = lat    
-        data_json = data.to_dict('records')
-        print(data_json[0])
+        try:
+            lat, lon = row[0], row[1]
+            data = get_data(lat, lon, base_url=base_url, api_key=api_key)
+            data['longitude'] = lon
+            data['latitude'] = lat    
+            data_json = data.to_dict('records')
+            print(data_json[0])
 
-        for row in data_json:
-            cols = ', '.join(f'"{k}"' for k in row.keys())   
-            vals = ', '.join(f':{k}' for k in row.keys())
-            stmt = f"""INSERT INTO weather_forecasts ({cols}) VALUES ({vals});"""
-            conn.run(stmt, **row)
-        
+            for row in data_json:
+                cols = ', '.join(f'"{k}"' for k in row.keys())   
+                vals = ', '.join(f':{k}' for k in row.keys())
+                stmt = f"""INSERT INTO weather_forecast ({cols}) VALUES ({vals});"""
+                conn.run(stmt, **row)
+        except Exception as e:
+            print(e)
+            
     return {
         "script_name": os.path.basename(__file__),
         "status": "success"
