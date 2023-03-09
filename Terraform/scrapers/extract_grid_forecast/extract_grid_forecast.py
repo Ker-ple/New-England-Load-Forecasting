@@ -54,7 +54,6 @@ def lambda_handler(event, context):
     for row in data_json:
         cols = ', '.join(f'"{k}"' for k in row.keys())   
         vals = ', '.join(f':{k}' for k in row.keys())
-        excluded = ', '.join(f'EXCLUDED.{k}' for k in row.keys())
         stmt = f"""INSERT INTO grid_forecast ({cols}) VALUES ({vals});"""
         conn.run(stmt, **row)
 

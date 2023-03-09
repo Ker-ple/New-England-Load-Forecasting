@@ -20,7 +20,6 @@ Example JSON output:
     "input": {
         'date_begin': '20220221', 
         'date_end': '20220308', 
-        'loc_id': '4001'
     },
     "script_name": "extract_grid_load.py",
     "status": "success"
@@ -52,7 +51,6 @@ def lambda_handler(event, context):
     for row in data_json:
         cols = ', '.join(f'"{k}"' for k in row.keys())   
         vals = ', '.join(f':{k}' for k in row.keys())
-        excluded = ', '.join(f'EXCLUDED.{k}' for k in row.keys())
         stmt = f"""INSERT INTO grid_load ({cols}) VALUES ({vals});"""
         conn.run(stmt, **row)
         

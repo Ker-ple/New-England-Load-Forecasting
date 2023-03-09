@@ -16,15 +16,8 @@ Example JSON input:
 """
 Example JSON output:
 {
-    "results": [
-        {
-            "state": "MA",
-            "script_name": "extract_asos.py"
-        },
-        .
-        .
-        .
-    ]
+    "status": "success",
+    "script_name": "extract_asos.py"
 }
 """
 

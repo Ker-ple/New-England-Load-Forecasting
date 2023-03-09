@@ -1,7 +1,7 @@
 Comment: State machine for the ISO data pipeline.
-StartAt: Config ISO
+StartAt: Config ISO Forecast
 States:
-  Config ISO:
+  Config ISO Forecast:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
