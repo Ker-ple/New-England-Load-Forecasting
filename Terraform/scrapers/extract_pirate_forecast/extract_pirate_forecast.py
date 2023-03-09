@@ -19,18 +19,22 @@ def lambda_handler(event, context):
     api_key = os.environ.get('PIRATE_WEATHER_AUTH')
     base_url = os.environ.get('PIRATE_FORECAST_API')
 
-    lat_longs_df = pd.read_sql(sql="SELECT DISTINCT latitude, longitude FROM weather_historical;", con=conn)
-    lat_longs = lat_longs_df.tolist()
+    lat_longs = list()
+    for row in conn.run("SELECT DISTINCT latitude, longitude FROM weather_historical;"):
+        lat_longs.append(row)
     
-    for lat, lon in lat_longs
-        data = get_data(lat, lon, base_url=base_url, api_key=api_key)    
+    for row in lat_longs:
+        lat, lon = row[0], row[1]
+        data = get_data(lat, lon, base_url=base_url, api_key=api_key)
+        data['longitude'] = lon
+        data['latitude'] = lat    
         data_json = data.to_dict('records')
         print(data_json[0])
 
         for row in data_json:
             cols = ', '.join(f'"{k}"' for k in row.keys())   
             vals = ', '.join(f':{k}' for k in row.keys())
-            stmt = f"""INSERT INTO weather_forecasts ({cols}) VALUES ({vals})"""
+            stmt = f"""INSERT INTO weather_forecasts ({cols}) VALUES ({vals});"""
             conn.run(stmt, **row)
         
     return {
@@ -40,11 +44,12 @@ def lambda_handler(event, context):
 
 def get_data(latitude, longitude, base_url, api_key, **kwargs):
     default_vars_map = {
-        'temperature': 'air_temp',
-        'apparentTemperature': 'apparent_temp',
+        'temperature': 'air_temperature',
+        'apparentTemperature': 'apparent_temperature',
         'humidity': 'relative_humidity',
         'precipAccumulation': 'total_precipitation',
-        'windSpeed': 'wind_speed'
+        'windSpeed': 'wind_speed',
+        'dewPoint': 'dewpoint_temperature'
         }
 
     variables_map = kwargs.get('variables_map', default_vars_map)
@@ -65,6 +70,6 @@ def extract_forecast_weather(raw_weather_data, variables_map):
     data = data.rename(columns=variables_map)
     data = data.reset_index()
     data = data.rename(columns={'time': 'forecasted_for'})
-    data['forecasted_at'] = datetime.now(timezone.utc)
+    data['forecasted_at'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     
     return data

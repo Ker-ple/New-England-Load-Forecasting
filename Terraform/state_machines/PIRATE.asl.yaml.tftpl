@@ -6,7 +6,7 @@ States:
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: ${config_forecasts_lambda_arn}:$LATEST
+      FunctionName: ${config_pirate_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -23,7 +23,7 @@ States:
     Resource: arn:aws:states:::lambda:invoke
     Parameters: 
       Payload.$: "$"
-      FunctionName: ${pirate_weather_lambda_arn}:$LATEST
+      FunctionName: ${pirate_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -35,7 +35,7 @@ States:
       BackoffRate: 2
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: $.pirate_weather_results
+    ResultPath: "$.pirate_results"
   Repeat?:
     Type: Choice
     Choices:
