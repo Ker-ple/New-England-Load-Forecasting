@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 import pg8000.native
+import math
+import numpy as np
 
 """
 Example JSON input:
