@@ -16,20 +16,19 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    Next: Get Data Map
+    Next: ASOS Map
     OutputPath: "$.Payload"
-  Get Data Map:
+  ASOS Map:
     Type: Map
-    MaxConcurrency: 12
+    MaxConcurrency: 2
     ItemProcessor:
       ProcessorConfig:
         Mode: INLINE
       StartAt: Get ASOS
-      States: 
+      States:
         Get ASOS:
           Type: Task
           Resource: arn:aws:states:::lambda:invoke
-          OutputPath: "$.Payload"
           Parameters: 
             Payload.$: "$"
             FunctionName: ${asos_lambda_arn}:$LATEST
@@ -45,7 +44,7 @@ States:
           End: true
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: $.asos_results
+    ResultPath: "$.Payload.asos_results"
   Repeat?:
     Type: Choice
     Choices:

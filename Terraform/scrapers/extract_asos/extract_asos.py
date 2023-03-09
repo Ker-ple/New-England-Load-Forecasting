@@ -1,6 +1,9 @@
 import pandas as pd
 import pg8000.native
 from itertools import chain
+import os
+import datetime
+import numpy as np
 
 """
 Example JSON input:
@@ -16,7 +19,7 @@ Example JSON output:
     "results": [
         {
             "state": "MA",
-            "status": "success"
+            "script_name": "extract_asos.py"
         },
         .
         .
@@ -54,16 +57,17 @@ def lambda_handler(event, context):
     for row in data_json:
         cols = ', '.join(f'"{k}"' for k in row.keys())   
         vals = ', '.join(f':{k}' for k in row.keys())
-        vals += ', :(SELECT ())'
         stmt = f"""INSERT INTO weather_historical ({cols}) VALUES ({vals});"""
         conn.run(stmt, **row)
 
-    return 0
+    return {
+        "status": "success",
+        "script_name": os.path.basename(__file__)
+    }
 
 def get_data(s, e, stations):
     s = datetime.datetime.strptime(s, '%Y%m%d')
     e = datetime.datetime.strptime(e, '%Y%m%d')
-    e = e - datetime.timedelta(days=1)
     noaa_url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
     for station in stations:
         noaa_url += f"station={station}&"
@@ -106,17 +110,15 @@ def clean_data(raw_data):
     data = data.astype(dtypes)
     data['weather_datetime'] = data['weather_datetime'].dt.ceil('H')
     
-    data = data.groupby(['station_name', 'weather_datetime'], as_index=False).agg(
+    data = data.groupby(['station_name', 'weather_datetime', 'longitude', 'latitude'], as_index=False).agg(
         air_temperature=('air_temperature', np.mean),
         dewpoint_temperature=('dewpoint_temperature', np.mean),
         relative_humidity=('relative_humidity', np.mean),
         apparent_temperature=('apparent_temperature', np.mean),
         total_precipitation=('total_precipitation', np.sum),
-        wind_speed=('wind_speed', np.mean),
-        longitude=('longitude', np.mean),
-        latitude=('latitude', np.mean)
+        wind_speed=('wind_speed', np.mean)
     )
     
-    cols = [col for col in t.columns if col not in ['station_name', 'weather_datetime', 'longitude', 'latitude']]
+    cols = [col for col in data.columns if col not in ['station_name', 'weather_datetime', 'longitude', 'latitude']]
     data[cols] = data[cols].round(2)
     return data 
