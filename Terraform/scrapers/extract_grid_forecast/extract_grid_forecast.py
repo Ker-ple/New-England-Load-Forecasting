@@ -22,7 +22,7 @@ Example JSON output:
                 'date_begin': '20220221', 
                 'date_end': '20220308', 
             },
-            "script_name": "extract_load_forecast.py",
+            "script_name": "extract_grid_forecast.py",
             "status": "success"
         }
     ]
@@ -89,7 +89,7 @@ def get_forecast(date_begin, date_end, base_url, auth):
                     print(f"response code for {date}: ", r.status_code)
                 # you might get errors, so we put the failed attempts in a list to try again later
                 except Exception:
-                    print(f"error for {date}")
+                    print(f"error for: {date}")
                     retries.append(date)
                     continue
             date_range = retries   
@@ -103,7 +103,7 @@ def clean_data(json_list):
     df = pd.concat(df_list, ignore_index=True, axis=0)
 
     # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
-    final_df = final_df[['BeginDate', 'CreationDate', 'LoadMw']]
-    final_df = final_df.rename({'LoadMw': 'forecast_load_mw', 'BeginDate': 'forecasted_for', 'CreationDate': 'forecasted_at'}, axis=1)
-    return final_df
+    df = df[['BeginDate', 'CreationDate', 'LoadMw']]
+    df = df.rename({'LoadMw': 'load_mw', 'BeginDate': 'forecasted_for', 'CreationDate': 'forecasted_at'}, axis=1)
+    return df
     

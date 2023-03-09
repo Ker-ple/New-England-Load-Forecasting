@@ -71,7 +71,11 @@ resource "random_pet" "config_pirate_lambda" {
   length = 2
 }
 
-resource "random_pet" "config_iso_lambda" {
+resource "random_pet" "config_iso_forecast_lambda" {
+  length = 2
+}
+
+resource "random_pet" "config_iso_load_lambda" {
   length = 2
 }
 

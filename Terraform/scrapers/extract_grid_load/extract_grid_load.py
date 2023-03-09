@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     base_url = os.environ.get('ISO_NE_API')
     auth = {"Authorization": os.environ.get('ISO_NE_AUTH')}
     
-    raw_data = get_load(event['date_begin'], event['date_end'], event['loc_id'], base_url=base_url, auth=auth)
+    raw_data = get_load(event['date_begin'], event['date_end'], base_url=base_url, auth=auth)
     data = clean_data(raw_data)
     data_json = data.to_dict('records')
 
@@ -66,7 +66,7 @@ def lambda_handler(event, context):
 def define_yyyymmdd_date_range(start, end):
     return [d.strftime('%Y%m%d') for d in pd.date_range(start, end)]
 
-def get_load(date_begin, date_end, loc_id, base_url, auth):
+def get_load(date_begin, date_end, base_url, auth):
     # requests historical load data for each YYYYMMDD date, then concats the results into a tall dataframe
     # starts by building the range of dates to query    
     date_range = define_yyyymmdd_date_range(date_begin, date_end)
@@ -101,6 +101,6 @@ def clean_data(json_list):
     df = pd.concat(df_list, ignore_index=True, axis=0)
 
     # renames columns and changes data types as needed, creates a single table for both forecasted and actual load 
-    final_df = final_df[['BeginDate', 'Load']]
-    final_df = final_df.rename({'Load': 'load_mw', 'BeginDate': 'load_datetime'}, axis=1)
-    return final_df
+    df = df[['BeginDate', 'Load']]
+    df = df.rename({'Load': 'load_mw', 'BeginDate': 'load_datetime'}, axis=1)
+    return df

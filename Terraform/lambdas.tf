@@ -127,7 +127,7 @@ module "asos_extract_weather" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name = "${random_pet.asos_lambda.id}-lambda-from-container-image"
-  description   = "Extracts weather forecasts via PirateWeather API."
+  description   = "Extracts historical weather from ASOS."
 
   create_package = false
   publish        = true
@@ -181,6 +181,10 @@ module "config_pirate" {
   architectures = ["x86_64"]
 
   environment_variables = {
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
     STATE_MACHINE_ARN = module.pirate_step_function.state_machine_arn
   }
 
@@ -198,11 +202,11 @@ module "config_pirate" {
   number_of_policies = 4
 }
 
-module "config_iso" {
+module "config_iso_load" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${random_pet.config_iso_lambda.id}-lambda-from-container-image"
-  description   = "Configures ISO-NE params and the lambdas they're ingested by."
+  function_name = "${random_pet.config_iso_load_lambda.id}-lambda-from-container-image"
+  description   = "Configures ISO-LOAD params and the lambdas they're ingested by."
 
   create_package = false
   publish        = true
@@ -211,12 +215,55 @@ module "config_iso" {
   ##################
   # Container Image
   ##################
-  image_uri     = module.docker_image_config_iso.image_uri
+  image_uri     = module.docker_image_config_iso_load.image_uri
   package_type  = "Image"
   architectures = ["x86_64"]
 
   environment_variables = {
-    STATE_MACHINE_ARN = module.iso_step_function.state_machine_arn
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
+    STATE_MACHINE_ARN = module.iso_load_step_function.state_machine_arn
+  }
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
+}
+
+module "config_iso_forecast" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_iso_forecast_lambda.id}-lambda-from-container-image"
+  description   = "Configures ISO-LOAD params and the lambdas they're ingested by."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_iso_forecast.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  environment_variables = {
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
+    STATE_MACHINE_ARN = module.iso_forecast_step_function.state_machine_arn
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -281,4 +328,43 @@ module "config_iterate" {
     EOT
   ]
   number_of_policy_jsons = 1
+}
+
+module "config_asos" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${random_pet.config_asos_lambda.id}-lambda-from-container-image"
+  description   = "Configures asos queries."
+
+  create_package = false
+  publish        = true
+  timeout        = 600
+
+  ##################
+  # Container Image
+  ##################
+  image_uri     = module.docker_image_config_asos.image_uri
+  package_type  = "Image"
+  architectures = ["x86_64"]
+
+  environment_variables = {
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
+    STATE_MACHINE_ARN = module.asos_step_function.state_machine_arn
+  }
+
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [module.security_group_lambdas.security_group_id]
+  attach_network_policy  = true
+
+  attach_policies = true
+  policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole"
+  ]
+  number_of_policies = 4
 }
