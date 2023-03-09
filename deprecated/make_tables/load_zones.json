@@ -1,0 +1,38 @@
+[
+        {
+            "zone_name": "The Hub",
+            "zone_id": 4000
+        },
+        {
+            "zone_name": "Maine",
+            "zone_id": 4001
+        },
+        {
+            "zone_name": "New Hampshire",
+            "zone_id": 4002
+        },
+        {
+            "zone_name": "Vermont",
+            "zone_id": 4003 
+        },
+        {
+            "zone_name": "Connecticut",
+            "zone_id": 4004
+        },
+        {
+            "zone_name": "Rhode Island",
+            "zone_id": 4005
+        },
+        {
+            "zone_name": "Southeast Mass.",
+            "zone_id": 4006
+        },
+        {
+            "zone_name": "Western/Central Mass.",
+            "zone_id": 4007
+        },
+        {
+            "zone_name": "Northeast Mass.",
+            "zone_id": 4008
+        }
+    ]

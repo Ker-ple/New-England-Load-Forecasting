@@ -1,12 +1,12 @@
-Comment: State machine for the ISO data pipeline.
-StartAt: Config PirateWeather
+Comment: State machine for the ASOS data pipeline.
+StartAt: Config ASOS
 States:
-  Config PirateWeather:
+  Config ASOS:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: ${config_pirate_lambda_arn}:$LATEST
+      FunctionName: ${config_asos_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -16,26 +16,35 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    Next: Get PirateWeather
+    Next: ASOS Map
     OutputPath: "$.Payload"
-  Get PirateWeather:
-    Type: Task
-    Resource: arn:aws:states:::lambda:invoke
-    Parameters: 
-      Payload.$: "$"
-      FunctionName: ${pirate_lambda_arn}:$LATEST
-    Retry:
-    - ErrorEquals:
-      - Lambda.ServiceException
-      - Lambda.AWSLambdaException
-      - Lambda.SdkClientException
-      - Lambda.TooManyRequestsException
-      IntervalSeconds: 2
-      MaxAttempts: 6
-      BackoffRate: 2
+  ASOS Map:
+    Type: Map
+    MaxConcurrency: 2
+    ItemProcessor:
+      ProcessorConfig:
+        Mode: INLINE
+      StartAt: Get ASOS
+      States:
+        Get ASOS:
+          Type: Task
+          Resource: arn:aws:states:::lambda:invoke
+          Parameters: 
+            Payload.$: "$"
+            FunctionName: ${asos_lambda_arn}:$LATEST
+          Retry:
+          - ErrorEquals:
+            - Lambda.ServiceException
+            - Lambda.AWSLambdaException
+            - Lambda.SdkClientException
+            - Lambda.TooManyRequestsException
+            IntervalSeconds: 2
+            MaxAttempts: 6
+            BackoffRate: 2
+          End: true
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: "$.pirate_results"
+    ResultPath: "$.Payload.asos_results"
   Repeat?:
     Type: Choice
     Choices:

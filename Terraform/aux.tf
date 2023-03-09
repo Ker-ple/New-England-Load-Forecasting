@@ -63,11 +63,19 @@ resource "random_pet" "pirate_lambda" {
   length = 2
 }
 
+resource "random_pet" "asos_lambda" {
+  length = 2
+}
+
 resource "random_pet" "config_pirate_lambda" {
   length = 2
 }
 
-resource "random_pet" "config_iso_lambda" {
+resource "random_pet" "config_iso_forecast_lambda" {
+  length = 2
+}
+
+resource "random_pet" "config_iso_load_lambda" {
   length = 2
 }
 
@@ -76,5 +84,9 @@ resource "random_pet" "config_iterate_lambda" {
 }
 
 resource "random_pet" "config_uscrn_lambda" {
+  length = 2
+}
+
+resource "random_pet" "config_asos_lambda" {
   length = 2
 }

@@ -4,6 +4,6 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-COPY config_noaa_gh.py ${LAMBDA_TASK_ROOT}
+COPY extract_pirate_forecast.py ${LAMBDA_TASK_ROOT}
 
-CMD [ "config_noaa_gh.lambda_handler" ]
+CMD [ "extract_pirate_forecast.lambda_handler" ]

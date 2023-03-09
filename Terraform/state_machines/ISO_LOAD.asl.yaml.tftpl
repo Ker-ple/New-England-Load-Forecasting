@@ -1,12 +1,12 @@
 Comment: State machine for the ISO data pipeline.
-StartAt: Config PirateWeather
+StartAt: Config ISO Load
 States:
-  Config PirateWeather:
+  Config ISO Load:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: ${config_pirate_lambda_arn}:$LATEST
+      FunctionName: ${config_iso_load_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -16,26 +16,36 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    Next: Get PirateWeather
+    Next: Load Map
     OutputPath: "$.Payload"
-  Get PirateWeather:
-    Type: Task
-    Resource: arn:aws:states:::lambda:invoke
-    Parameters: 
-      Payload.$: "$"
-      FunctionName: ${pirate_lambda_arn}:$LATEST
-    Retry:
-    - ErrorEquals:
-      - Lambda.ServiceException
-      - Lambda.AWSLambdaException
-      - Lambda.SdkClientException
-      - Lambda.TooManyRequestsException
-      IntervalSeconds: 2
-      MaxAttempts: 6
-      BackoffRate: 2
+  Load Map:
+    Type: Map
+    MaxConcurrency: 2
+    ItemProcessor:
+      ProcessorConfig:
+        Mode: INLINE
+      StartAt: Get Load
+      States:
+        Get Load:
+          Type: Task
+          Resource: arn:aws:states:::lambda:invoke
+          OutputPath: "$.Payload"
+          Parameters:
+            Payload.$: "$"
+            FunctionName: ${iso_load_lambda_arn}:$LATEST
+          Retry:
+          - ErrorEquals:
+            - Lambda.ServiceException
+            - Lambda.AWSLambdaException
+            - Lambda.SdkClientException
+            - Lambda.TooManyRequestsException
+            IntervalSeconds: 2
+            MaxAttempts: 6
+            BackoffRate: 2
+          End: true
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: "$.pirate_results"
+    ResultPath: "$.iso_load_results"
   Repeat?:
     Type: Choice
     Choices:

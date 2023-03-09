@@ -1,12 +1,12 @@
-Comment: State machine for the USCRN data pipeline.
-StartAt: Config USCRN
+Comment: State machine for the ISO data pipeline.
+StartAt: Config ISO Forecast
 States:
-  Config USCRN:
+  Config ISO Forecast:
     Type: Task
     Resource: arn:aws:states:::lambda:invoke
     Parameters:
       Payload.$: "$"
-      FunctionName: ${config_uscrn_lambda_arn}:$LATEST
+      FunctionName: ${config_iso_forecast_lambda_arn}:$LATEST
     Retry:
     - ErrorEquals:
       - Lambda.ServiceException
@@ -16,23 +16,23 @@ States:
       IntervalSeconds: 2
       MaxAttempts: 6
       BackoffRate: 2
-    Next: Get Data Map
+    Next: Forecast Map
     OutputPath: "$.Payload"
-  Get Data Map:
+  Forecast Map:
     Type: Map
-    MaxConcurrency: 12
+    MaxConcurrency: 2
     ItemProcessor:
       ProcessorConfig:
         Mode: INLINE
-      StartAt: Get USCRN
-      States: 
-        Get USCRN:
+      StartAt: Get Forecast
+      States:
+        Get Forecast:
           Type: Task
           Resource: arn:aws:states:::lambda:invoke
           OutputPath: "$.Payload"
-          Parameters: 
+          Parameters:
             Payload.$: "$"
-            FunctionName: ${uscrn_lambda_arn}:$LATEST
+            FunctionName: ${iso_forecast_lambda_arn}:$LATEST
           Retry:
           - ErrorEquals:
             - Lambda.ServiceException
@@ -45,7 +45,7 @@ States:
           End: true
     InputPath: "$.records"
     Next: Repeat?
-    ResultPath: $.uscrn_results
+    ResultPath: "$.iso_forecast_results"
   Repeat?:
     Type: Choice
     Choices:
