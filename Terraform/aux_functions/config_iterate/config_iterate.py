@@ -7,26 +7,13 @@ import json
 Example JSON input:
 {
     "params": {
-        "areas": ["kingston", "durham"],
-        "date_begin": "20220811",
-        "date_end": "20230206"
-    },
-    "config": {
-        "repeat": "True",
-        "seconds_delta": "86400"
-    }    
-}
-
-OR 
-
-{
-    "params": {
         "date_begin": "20220811",
         "date_end": "20230224"
     },
     "config": {
         "repeat": "True",
-        "seconds_delta": "300"
+        "seconds_delta": "86400",
+        "state_machine_arn": "arn:aws:states:us-east-1:485809471371:stateMachine:PIRATE"
     }
 }
 """
@@ -45,8 +32,9 @@ Example JSON output:
             "date_end": "20230208"
         },
         "config": {
-            "repeat": True,
-            "seconds_delta": "86400"
+            "repeat": "True",
+            "seconds_delta": "86400",
+            "state_machine_arn": "arn:aws:states:us-east-1:485809471371:stateMachine:PIRATE"
         }
     }   
 }
@@ -103,7 +91,7 @@ def lambda_handler(event, context):
     )
 
     return {
-        "response": json.dumps(response),
+        "status": "success",
         "input": {
             "params": new_params,
             "config": config
