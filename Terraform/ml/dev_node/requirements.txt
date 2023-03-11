@@ -1,0 +1,4 @@
+pandas==1.5.2
+pg8000==1.29.4
+scikit-learn==1.2.2
+jupyterlab==3.6.1
