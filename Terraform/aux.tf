@@ -8,9 +8,11 @@ locals {
   curl \
   gnupg-agent \
   software-properties-common \
-  docker
-  sudo service docker start 
-  sudo docker run -d --name=grafana -p 443:3000 grafana/grafana-oss
+  python3-pip
+  sudo amazon-linux-extras install docker
+  sudo service docker start
+  sudo usermod -a -G docker ec2-user
+  docker run -d --name=grafana -p 443:3000 grafana/grafana-oss
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
   echo export DB_HOST="${module.rds.db_instance_address}" | sudo tee -a /etc/profile
@@ -18,9 +20,17 @@ locals {
   echo export DB_PASSWORD="${var.db_password}" | sudo tee -a /etc/profile
   echo export DB_USER="${var.db_username}" | sudo tee -a /etc/profile
   
-  echo "finished setting up"
+  echo "Finished setting up DB vars"
+
+  docker run -d -it -p 8888:8888 jupyter/scipy-notebook:2023-02-28
+
+
   EOT
 }
+
+  #eval $(aws ecr get-login --region us-east-1 --no-include-email)
+  #docker pull ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.dev_node.id}:2
+  #python3 -m pip install jupyter-notebook
 
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
@@ -32,7 +42,7 @@ module "ec2_instance" {
   user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = "t2.micro"
-  key_name                    = "key_1"
+  key_name                    = var.generated_key_name
   availability_zone           = element(module.vpc.azs, 0)
   vpc_security_group_ids      = [module.security_group_ec2.security_group_id, module.security_group_db_ingestion.security_group_id]
   subnet_id                   = element(module.vpc.public_subnets, 0)
@@ -43,6 +53,24 @@ module "ec2_instance" {
   iam_role_policies = {
     AdministratorAccess = "arn:aws:iam::aws:policy/AdministratorAccess"
   }
+}
+
+resource "tls_private_key" "dev_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "generated_key" {
+  key_name   = var.generated_key_name
+  public_key = tls_private_key.dev_key.public_key_openssh
+
+  provisioner "local-exec" {    # Generate "terraform-key-pair.pem" in current directory
+    command = <<-EOT
+      echo '${tls_private_key.dev_key.private_key_pem}' > ~/.ssh/'${var.generated_key_name}'.pem
+      chmod 400 ~/.ssh/'${var.generated_key_name}'.pem
+    EOT
+  }
+
 }
 
 resource "random_pet" "iso_forecast_lambda" {
@@ -86,5 +114,9 @@ resource "random_pet" "config_uscrn_lambda" {
 }
 
 resource "random_pet" "config_asos_lambda" {
+  length = 2
+}
+
+resource "random_pet" "dev_node" {
   length = 2
 }
