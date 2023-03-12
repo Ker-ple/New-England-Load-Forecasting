@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.9
+FROM jupyter/scipy-notebook:latest
 
 COPY requirements.txt .
 
