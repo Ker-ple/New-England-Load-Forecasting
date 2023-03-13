@@ -142,10 +142,10 @@ module "asos_extract_weather" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME         = module.rds.db_instance_address
-    DB_PASSWORD         = var.db_password
-    DB_USERNAME         = var.db_username
-    DB_NAME             = var.db_name
+    DB_HOSTNAME = module.rds.db_instance_address
+    DB_PASSWORD = var.db_password
+    DB_USERNAME = var.db_username
+    DB_NAME     = var.db_name
   }
 
   vpc_subnet_ids         = module.vpc.private_subnets
@@ -181,10 +181,10 @@ module "config_pirate" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME       = module.rds.db_instance_address
+    DB_PASSWORD       = var.db_password
+    DB_USERNAME       = var.db_username
+    DB_NAME           = var.db_name
     STATE_MACHINE_ARN = module.pirate_step_function.state_machine_arn
   }
 
@@ -220,10 +220,10 @@ module "config_iso_load" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME       = module.rds.db_instance_address
+    DB_PASSWORD       = var.db_password
+    DB_USERNAME       = var.db_username
+    DB_NAME           = var.db_name
     STATE_MACHINE_ARN = module.iso_load_step_function.state_machine_arn
   }
 
@@ -259,10 +259,10 @@ module "config_iso_forecast" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME       = module.rds.db_instance_address
+    DB_PASSWORD       = var.db_password
+    DB_USERNAME       = var.db_username
+    DB_NAME           = var.db_name
     STATE_MACHINE_ARN = module.iso_forecast_step_function.state_machine_arn
   }
 
@@ -348,10 +348,10 @@ module "config_asos" {
   architectures = ["x86_64"]
 
   environment_variables = {
-    DB_HOSTNAME = module.rds.db_instance_address
-    DB_PASSWORD = var.db_password
-    DB_USERNAME = var.db_username
-    DB_NAME     = var.db_name
+    DB_HOSTNAME       = module.rds.db_instance_address
+    DB_PASSWORD       = var.db_password
+    DB_USERNAME       = var.db_username
+    DB_NAME           = var.db_name
     STATE_MACHINE_ARN = module.asos_step_function.state_machine_arn
   }
 

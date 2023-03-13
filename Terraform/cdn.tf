@@ -1,8 +1,8 @@
 module "cdn" {
-  source = "terraform-aws-modules/cloudfront/aws"
+  source              = "terraform-aws-modules/cloudfront/aws"
   create_distribution = false
 
-  aliases = ["thenapkinnotes.com","www.thenapkinnotes.com"]
+  aliases = ["thenapkinnotes.com", "www.thenapkinnotes.com"]
 
   comment             = "Cloudfront distribution for the EC2 hosting the frontend."
   enabled             = true
