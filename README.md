@@ -7,7 +7,23 @@ Last summer, Boston-area electricity providers asked users to limit their consum
 This projects scrapes weather data from 80 different weather stations on a daily basis, week-ahead weather forecasts for the same 80 locations on an hourly basis, and historical and forecasted load on a daily basis from the ISO-NE web api. The hope is that integrating this volume of weather data will lead to a more enriched model than the one currently used by ISO-NE,which as far as I can tell only uses temperature highs, weather alerts, and cloud cover on daily, week-ahead basis.
 
 ## Cloud Architecture
-The architecture consists of various AWS services constructed with Terraform. Mostly notably, the scraping is done by four different State Machines which uses AWS lambda to scrape the above-described data, and the result ends up in an RDS Postgres DB. I have also set up an EC2 with access to the DB to perform my analyses, host the frontend for this project, and create the models.
+The architecture consists of various AWS services constructed with Terraform. Mostly notably, the scraping is done by four different State Machines which uses AWS lambda to scrape the above-described data, and the result ends up in an RDS Postgres DB. I have also set up an an EC2 with DB access to perform my analyses, host the frontend for this project, and create the models.
 
 ## To do
-I am in the midst of deciding how to aggregate the 80 weather stations' data (will probably end up clustering them based on their distance from major population centers and similarity in weather data). Once that is done, then I will make an ML model for anomaly detection and integrate new data sources if it doesn't perform well enough. 
+I am in the midst of deciding how to aggregate the 80 weather stations' data by clustering them based on their distance from major population centers and similarity in weather data. Once that is done, then I will make an ML model for anomaly detection and integrate new data sources if it doesn't perform well enough. 
+
+## Tech used
+- Terraform 
+- Docker (for the lambdas and a jupyter container on the EC2)
+- Amazon EC2
+- AWS Lambda
+- AWS RDS Postgres
+- AWS Step Functions
+- Python (and associated libraries, e.g. pandas, sqlalchemy, httpx, scikit-learn, ...)
+- SQL
+
+## Links
+My LinkedIn: https://www.linkedin.com/in/cyrus-kirby/
+ISO-NE web api: https://webservices.iso-ne.com/docs/v1.1/
+Weather stations: https://mesonet.agron.iastate.edu/ASOS/
+Weather forecasts: https://pirateweather.net/
