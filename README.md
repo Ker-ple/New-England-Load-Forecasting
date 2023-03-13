@@ -23,7 +23,7 @@ I am in the midst of deciding how to aggregate the 80 weather stations' data by 
 - SQL
 
 ## Links
-My LinkedIn: https://www.linkedin.com/in/cyrus-kirby/
-ISO-NE web api: https://webservices.iso-ne.com/docs/v1.1/
-Weather stations: https://mesonet.agron.iastate.edu/ASOS/
-Weather forecasts: https://pirateweather.net/
+- My LinkedIn: https://www.linkedin.com/in/cyrus-kirby/
+- ISO-NE web api: https://webservices.iso-ne.com/docs/v1.1/
+- Weather stations: https://mesonet.agron.iastate.edu/ASOS/
+- Weather forecasts: https://pirateweather.net/
