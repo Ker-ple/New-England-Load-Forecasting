@@ -3,7 +3,7 @@ module "rds" {
 
   identifier = "iso-project-db"
 
-  deletion_protection    = false
+  deletion_protection    = true
   engine                 = "postgres"
   engine_version         = "14.6"
   instance_class         = "db.t3.micro"
