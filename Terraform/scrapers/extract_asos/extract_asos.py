@@ -61,6 +61,7 @@ def lambda_handler(event, context):
 def get_data(s, e, stations):
     s = datetime.datetime.strptime(s, '%Y%m%d')
     e = datetime.datetime.strptime(e, '%Y%m%d')
+    e += datetime.timedelta(days=1) # Because Iowa State's website accepts a date range which doesn't include the last day.
     noaa_url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
     for station in stations:
         noaa_url += f"station={station}&"
