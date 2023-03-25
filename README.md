@@ -10,7 +10,7 @@ This projects scrapes weather data from 80 different weather stations on a daily
 The architecture consists of various AWS services constructed with Terraform. Mostly notably, the scraping is done by four different State Machines which uses AWS lambda to scrape the above-described data, and the result ends up in an RDS Postgres DB. I have also set up an an EC2 with DB access to perform my analyses, host the frontend for this project, and create the models.
 
 ## To do
-I am in the midst of deciding how to aggregate the 80 weather stations' data by clustering them based on their distance from major population centers and similarity in weather data. Once that is done, then I will make an ML model for anomaly detection and integrate new data sources if it doesn't perform well enough. 
+I am currently building and testing a Prophet model. Once that is done, I will build a front-end for the project.
 
 ## Tech used
 - Terraform 
