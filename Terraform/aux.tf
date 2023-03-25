@@ -8,7 +8,8 @@ locals {
   curl \
   gnupg-agent \
   software-properties-common \
-  python3-pip
+  python3-pip \
+  git
 
   DEVICE=/dev/$(lsblk -rno NAME | awk 'FNR == 4 {print}')
   MOUNT_POINT=/data/
@@ -29,6 +30,9 @@ locals {
   echo export DB_NAME="${var.db_name}" | sudo tee -a /etc/profile
   echo export DB_PASSWORD="${var.db_password}" | sudo tee -a /etc/profile
   echo export DB_USER="${var.db_username}" | sudo tee -a /etc/profile
+
+  git config --global user.name "Ker-ple"
+  git config --global user.email "cyruskirbus@gmail.com"
 
   echo "docker run -it -d -p 8888:8888 --name=jupyter -v /data:/home/jovyan/work \
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \

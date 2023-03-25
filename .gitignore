@@ -13,3 +13,4 @@ to-do.txt
 .gitignore
 ec2.txt
 deprecated
+venv
