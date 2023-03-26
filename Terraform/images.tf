@@ -242,6 +242,33 @@ module "docker_image_config_asos" {
   platform    = "linux/amd64"
 }
 
+module "docker_image_prophet_forecast" {
+  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+
+  create_ecr_repo = true
+  ecr_repo        = random_pet.prophet_forecast.id
+  ecr_repo_lifecycle_policy = jsonencode({
+    "rules" : [
+      {
+        "rulePriority" : 1,
+        "description" : "Keep only the last 2 images",
+        "selection" : {
+          "tagStatus" : "any",
+          "countType" : "imageCountMoreThan",
+          "countNumber" : 2
+        },
+        "action" : {
+          "type" : "expire"
+        }
+      }
+    ]
+  })
+
+  image_tag   = "2.0"
+  source_path = "./forecasting"
+  platform    = "linux/amd64"
+}
+
 #module "docker_image_dev_node" {
 #  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 #

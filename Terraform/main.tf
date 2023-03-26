@@ -9,7 +9,7 @@ locals {
   iso_forecast_lambda_arn        = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.iso_forecast_lambda.id}-lambda-from-container-image"
   asos_lambda_arn                = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.asos_lambda.id}-lambda-from-container-image"
   pirate_lambda_arn              = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.pirate_lambda.id}-lambda-from-container-image"
-}
+  }
 
 module "iso_load_step_function" {
   source  = "terraform-aws-modules/step-functions/aws"
@@ -120,5 +120,28 @@ module "pirate_step_function" {
         "${local.config_iterate_lambda_arn}:*"
       ]
     }
+  }
+}
+
+module "eventbridge" {
+  source = "terraform-aws-modules/eventbridge/aws"
+
+  create_bus = false
+
+  rules = {
+    crons = {
+      description         = "Triggers daily prophet forecast"
+      schedule_expression = "rate(1 day)"
+    }
+  }
+
+  targets = {
+    crons = [
+      {
+        name  = "daily-prophet-forecast"
+        arn   = module.prophet_forecast.lambda_function_arn
+        input = jsonencode({"job": "cron-by-rate"})
+      }
+    ]
   }
 }
