@@ -56,7 +56,7 @@ module "ec2_instance" {
   user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
-  instance_type               = "t3.small"
+  instance_type               = "t3.micro"
   key_name                    = var.generated_key_name
   availability_zone           = element(module.vpc.azs, 0)
   vpc_security_group_ids      = [module.security_group_ec2.security_group_id, module.security_group_db_ingestion.security_group_id]
@@ -144,5 +144,9 @@ resource "random_pet" "config_asos_lambda" {
 }
 
 resource "random_pet" "dev_node" {
+  length = 2
+}
+
+resource "random_pet" "prophet_forecast" {
   length = 2
 }
