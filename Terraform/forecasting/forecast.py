@@ -86,11 +86,10 @@ def get_past_data(connection):
 
 def get_future_data(connection):
     dfs = list()
-
     for params in area_params:
         values = ", ".join(str((str(lat), str(lon))) for (lat, lon) in params)
         stmt = '''SELECT 
-            wf.forecasted_for, 
+            wf.forecasted_for
             AVG(NULLIF(wf.apparent_temperature, 'NaN')) apparent_temperature_avg, 
             AVG(NULLIF(wf.air_temperature, 'NaN')) air_temperature_avg, 
             AVG(NULLIF(wf.dewpoint_temperature, 'NaN')) dewpoint_temperature_avg,
@@ -98,10 +97,12 @@ def get_future_data(connection):
             AVG(NULLIF(wf.total_precipitation, 'NaN')) total_precipitation_avg, 
             AVG(NULLIF(wf.wind_speed, 'NaN')) wind_speed_avg
             FROM weather_forecast wf
-            INNER JOIN (SELECT MAX(forecasted_at) MaxDate, forecasted_for FROM weather_forecast GROUP BY forecasted_for) rec
+            INNER JOIN (SELECT MAX(forecasted_at) MaxDate, forecasted_for 
+            FROM weather_forecast 
+            WHERE forecasted_for >= NOW() 
+            AND (latitude, longitude) IN ({}) 
+            GROUP BY forecasted_for) rec
             ON wf.forecasted_for = rec.forecasted_for AND wf.forecasted_at = rec.MaxDate
-            WHERE (wf.latitude, wf.longitude) IN ({})
-            AND wf.forecasted_for >= NOW()
             GROUP BY wf.forecasted_for
             ORDER BY wf.forecasted_for ASC;'''.format(values)
         df = pd.read_sql(sql=text(stmt), con=connection)
