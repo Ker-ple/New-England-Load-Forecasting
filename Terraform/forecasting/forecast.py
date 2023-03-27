@@ -3,19 +3,19 @@ import pandas as pd
 import numpy as np
 from prophet import Prophet
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, insert
 from sqlalchemy.engine import URL
-import pg8000
 
 def lambda_handler(event, context):
     print(event)
     url = URL.create(
         "postgresql+pg8000",
-        username=os.environ.get('DB_USERNAME'),
+        username=os.environ.get('DB_USER'),
         password=os.environ.get('DB_PASSWORD'),
-        host=os.environ.get('DB_HOSTNAME'),
+        host=os.environ.get('DB_HOST'),
         database=os.environ.get('DB_NAME')
     )
+
     engine = create_engine(url)
     
     with engine.connect() as conn:
@@ -23,18 +23,17 @@ def lambda_handler(event, context):
         future_data = get_future_data(conn)
     
     regressors = [c for c in past_data.columns if c not in ['ds', 'y']]
-    print('regressors:', regressors)
     m = Prophet(changepoint_prior_scale=0.01, seasonality_prior_scale=1)
     m.add_country_holidays(country_name='US')
     for col in regressors:
         m.add_regressor(col)
     m.fit(past_data)
-    print('past_data:', past_data.loc[0, :])
+    print('first row of past data:\n', past_data.loc[0, :])
     
     predictions = m.predict(future_data)
-    voi = clean_predictions(predictions)
-    with engine.connect() as conn:
-        put_predictions_in_db(voi, conn)
+    predictions = clean_predictions(predictions)
+    predictions.to_sql('prophet_forecast', index=False, if_exists='append', con=engine)
+    print('first row of predictions:\n', voi.loc[0, :])
     return 'success'
 
 def get_past_data(connection):
@@ -89,7 +88,7 @@ def get_future_data(connection):
     for params in area_params:
         values = ", ".join(str((str(lat), str(lon))) for (lat, lon) in params)
         stmt = '''SELECT 
-            wf.forecasted_for
+            wf.forecasted_for,
             AVG(NULLIF(wf.apparent_temperature, 'NaN')) apparent_temperature_avg, 
             AVG(NULLIF(wf.air_temperature, 'NaN')) air_temperature_avg, 
             AVG(NULLIF(wf.dewpoint_temperature, 'NaN')) dewpoint_temperature_avg,
@@ -123,14 +122,7 @@ def clean_predictions(predictions):
                                               'yhat_lower': 'load_mw_lower', 
                                               'yhat_upper': 'load_mw_upper'})
     predictions['forecasted_at'] = datetime.now(timezone.utc)
-    return predictions.to_dict('records')
-
-def put_predictions_in_db(predictions, connection):
-    for row in predictions:
-        cols = ', '.join(f'"{k}"' for k in row.keys())   
-        vals = ', '.join(f':{k}' for k in row.keys())
-        stmt = f"""INSERT INTO prophet_forecast ({cols}) VALUES ({vals});"""
-        pd.read_sql(sql=text(stmt), con=connection)
+    return predictions
 
 boston_area = ((42.1912, -71.1733),
     (42.7818, -71.5148),
