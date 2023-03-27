@@ -131,7 +131,7 @@ module "eventbridge" {
   rules = {
     crons = {
       description         = "Triggers daily prophet forecast"
-      schedule_expression = "rate(1 day)"
+      schedule_expression = "cron(15 10 * * ? *)"
     }
   }
 
