@@ -1,6 +1,6 @@
 module "cdn" {
   source              = "terraform-aws-modules/cloudfront/aws"
-  create_distribution = false
+  create_distribution = true
 
   aliases = ["thenapkinnotes.com", "www.thenapkinnotes.com"]
 
@@ -23,7 +23,18 @@ module "cdn" {
     }
   }
 
+  default_cache_behavior = {
+    target_origin_id           = "something"
+    viewer_protocol_policy     = "allow-all"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS"]
+    cached_methods  = ["GET", "HEAD"]
+    compress        = true
+    query_string    = true
+  }
+
   viewer_certificate = {
     acm_certificate_arn = "arn:aws:acm:us-east-1:485809471371:certificate/335a6c64-6850-42e5-a424-ee071140e173"
+    ssl_support_method  = "sni-only"
   }
 }
