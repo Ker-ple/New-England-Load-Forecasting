@@ -65,6 +65,13 @@ module "security_group_ec2" {
       protocol    = "tcp"
       description = "Port to host Jupyter"
       cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 8050
+      to_port     = 8050
+      protocol    = "tcp"
+      description = "Port to host frontend"
+      cidr_blocks = "0.0.0.0/0"
     }
   ]
 
