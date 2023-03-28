@@ -44,14 +44,14 @@ app.layout = html.Div([
     dcc.Graph(id="load-chart"),
     dcc.Interval(
         id='refresh',
-        interval=4.32e7,
+        interval=3.6e6,
         n_intervals=0
     )
 ])
 
 @app.callback(Output('load-chart', 'figure'),
               Input('refresh', 'n_intervals'))
-def display_time_series():
+def display_time_series(n):
     fig = go.Figure()
     fig.add_traces(
         go.Scatter(
