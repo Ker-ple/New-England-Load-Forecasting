@@ -36,7 +36,7 @@ locals {
 
   eval $(aws ecr get-login --region us-east-1 --no-include-email)
   docker pull ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
-  docker run -it -d -p 8050:8050 --name=plotlydash -v /data/New-England-Load-Forecasting/Terraform/frontend:/wd \
+  docker run -it -d -p 8050:8050 --name=frontend -v /data/New-England-Load-Forecasting/Terraform/frontend:/wd \
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
   ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
   
