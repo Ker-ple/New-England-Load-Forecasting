@@ -8,8 +8,8 @@ locals {
   curl \
   gnupg-agent \
   software-properties-common \
-  python3-pip \
-  git
+  git \
+  python3
 
   DEVICE=/dev/$(lsblk -rno NAME | awk 'FNR == 4 {print}')
   MOUNT_POINT=/data/
@@ -40,7 +40,7 @@ locals {
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
   ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
   
-  echo "Finished setting up jupyter containers"
+  echo "Finished setting up containers"
 
   EOT
 }
