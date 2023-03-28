@@ -23,7 +23,6 @@ locals {
   sudo amazon-linux-extras install docker
   sudo service docker start
   sudo usermod -a -G docker ec2-user
-  docker run -d --name=grafana -p 3000:3000 grafana/grafana-oss
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
   echo export DB_HOST="${module.rds.db_instance_address}" | sudo tee -a /etc/profile
