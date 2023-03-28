@@ -99,6 +99,7 @@ module "eventbridge_prophet_forecast" {
   source = "terraform-aws-modules/eventbridge/aws"
 
   create_bus = false
+  role_name = "prophet_eventbridge_role"
 
   rules = {
     crons = {
@@ -112,7 +113,6 @@ module "eventbridge_prophet_forecast" {
       {
         name  = "daily-prophet-forecast"
         arn   = module.prophet_forecast.lambda_function_arn
-        input = jsonencode({"job": "cron-by-rate"})
       }
     ]
   }
@@ -122,6 +122,7 @@ module "eventbridge_pirateweather" {
   source = "terraform-aws-modules/eventbridge/aws"
 
   create_bus = false
+  role_name = "pirateweather_eventbridge_role"
 
   rules = {
     crons = {
@@ -135,7 +136,6 @@ module "eventbridge_pirateweather" {
       {
         name  = "daily-pirateweather"
         arn   = module.pirate_extract_weather_forecasts.lambda_function_arn
-        input = jsonencode({"job": "cron-by-rate"})
       }
     ]
   }
