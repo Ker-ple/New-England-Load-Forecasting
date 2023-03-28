@@ -30,15 +30,12 @@ locals {
   echo export DB_PASSWORD="${var.db_password}" | sudo tee -a /etc/profile
   echo export DB_USER="${var.db_username}" | sudo tee -a /etc/profile
 
-  git config --global user.name "Ker-ple"
-  git config --global user.email "cyruskirbus@gmail.com"
-
   docker run -it -d -p 8888:8888 --name=jupyter -v /data:/home/jovyan/work \
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
   jupyter/scipy-notebook:2023-03-09
 
   eval $(aws ecr get-login --region us-east-1 --no-include-email)
-  docker pull ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2
+  docker pull ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
   docker run -it -d -p 8050:8050 --name=plotlydash -v /data/New-England-Load-Forecasting/Terraform/frontend:/wd \
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
   ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
