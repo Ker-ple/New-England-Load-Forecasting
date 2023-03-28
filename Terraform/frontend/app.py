@@ -38,7 +38,7 @@ url = URL.create(
 engine = create_engine(url)
 
 with engine.connect() as conn:
-    prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=engine.connect())
+    prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=conn)
 
 app.layout = html.Div([
     html.H4('Load Forecast'),
