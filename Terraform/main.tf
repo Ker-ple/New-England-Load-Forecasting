@@ -95,43 +95,15 @@ module "asos_step_function" {
   }
 }
 
-module "pirate_step_function" {
-  source  = "terraform-aws-modules/step-functions/aws"
-  version = "2.7.3"
-
-  name = "PIRATE"
-  type = "STANDARD"
-
-  definition = jsonencode(yamldecode(templatefile(
-    "${path.root}/state_machines/PIRATE.asl.yaml.tftpl", {
-      "config_pirate_lambda_arn"  = local.config_pirate_lambda_arn
-      "pirate_lambda_arn"         = local.pirate_lambda_arn
-      "config_iterate_lambda_arn" = local.config_iterate_lambda_arn
-  })))
-
-  attach_policy_statements = true
-  policy_statements = {
-    lambda = {
-      effect  = "Allow",
-      actions = ["lambda:InvokeFunction"],
-      resources = [
-        "${local.config_pirate_lambda_arn}:*",
-        "${local.pirate_lambda_arn}:*",
-        "${local.config_iterate_lambda_arn}:*"
-      ]
-    }
-  }
-}
-
-module "eventbridge" {
+module "eventbridge_prophet_forecast" {
   source = "terraform-aws-modules/eventbridge/aws"
 
   create_bus = false
 
   rules = {
     crons = {
-      description         = "Triggers daily prophet forecast"
-      schedule_expression = "cron(15 10 * * ? *)"
+      description         = "Triggers daily prophet forecast at 4:00pm UTC"
+      schedule_expression = "cron(0 16 * * ? *)"
     }
   }
 
@@ -140,6 +112,29 @@ module "eventbridge" {
       {
         name  = "daily-prophet-forecast"
         arn   = module.prophet_forecast.lambda_function_arn
+        input = jsonencode({"job": "cron-by-rate"})
+      }
+    ]
+  }
+}
+
+module "eventbridge_pirateweather" {
+  source = "terraform-aws-modules/eventbridge/aws"
+
+  create_bus = false
+
+  rules = {
+    crons = {
+      description         = "Triggers daily pirateweather requests at 3:30pm UTC"
+      schedule_expression = "cron(30 15 * * ? *)"
+    }
+  }
+
+  targets = {
+    crons = [
+      {
+        name  = "daily-pirateweather"
+        arn   = module.pirate_extract_weather_forecasts.lambda_function_arn
         input = jsonencode({"job": "cron-by-rate"})
       }
     ]
