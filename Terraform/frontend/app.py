@@ -19,7 +19,8 @@ pf.forecasted_for AS datetime
 FROM prophet_forecast pf
 INNER JOIN (SELECT MAX(forecasted_at) MaxDate, forecasted_for 
             FROM weather_forecast 
-            WHERE forecasted_for >= NOW() - INTERVAL '1 DAY') wfrec
+            WHERE forecasted_for >= NOW() - INTERVAL '1 DAY'
+            GROUP BY forecasted_for) wfrec
 ON pf.forecasted_for = wfrec.forecasted_for
 AND pf.forecasted_at = wfrec.MaxDate
 LEFT JOIN (SELECT load_mw, load_datetime
@@ -36,7 +37,8 @@ url = URL.create(
 
 engine = create_engine(url)
 
-prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=engine.connect())
+with engine.connect() as conn:
+    prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=engine.connect())
 
 app.layout = html.Div([
     html.H4('Load Forecast'),
