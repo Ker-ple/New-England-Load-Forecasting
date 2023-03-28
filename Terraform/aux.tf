@@ -9,7 +9,7 @@ locals {
   gnupg-agent \
   software-properties-common \
   git \
-  python3
+  python3-pip
 
   DEVICE=/dev/$(lsblk -rno NAME | awk 'FNR == 4 {print}')
   MOUNT_POINT=/data/
