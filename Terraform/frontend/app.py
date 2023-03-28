@@ -24,8 +24,7 @@ ON pf.forecasted_for = wfrec.forecasted_for
 AND pf.forecasted_at = wfrec.MaxDate
 LEFT JOIN (SELECT load_mw, load_datetime
             FROM grid_load gl) glrec
-ON pf.forecasted_for = glrec.load_datetime
-            '''
+ON pf.forecasted_for = glrec.load_datetime'''
 
 url = URL.create(
         "postgresql+pg8000",
@@ -37,7 +36,7 @@ url = URL.create(
 
 engine = create_engine(url)
 
-prophet_forecasts_df = pd.read_sql(sql=text(stmt), conn=engine.connect())
+prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=engine.connect())
 
 app.layout = html.Div([
     html.H4('Load Forecast'),
