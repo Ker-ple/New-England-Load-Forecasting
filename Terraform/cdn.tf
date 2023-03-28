@@ -1,6 +1,6 @@
 module "cdn" {
   source              = "terraform-aws-modules/cloudfront/aws"
-  create_distribution = true
+  create_distribution = false
 
   aliases = ["thenapkinnotes.com", "www.thenapkinnotes.com"]
 
@@ -24,7 +24,7 @@ module "cdn" {
   }
 
   default_cache_behavior = {
-    target_origin_id           = "something"
+    target_origin_id           = "ec2"
     viewer_protocol_policy     = "allow-all"
 
     allowed_methods = ["GET", "HEAD", "OPTIONS"]
