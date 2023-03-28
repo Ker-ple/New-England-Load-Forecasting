@@ -41,7 +41,6 @@ with engine.connect() as conn:
     prophet_forecasts_df = pd.read_sql(sql=text(stmt), con=conn)
 
 app.layout = html.Div([
-    html.H4('Load Forecast'),
     dcc.Graph(id="load-chart"),
     dcc.Interval(
         id='refresh',
@@ -57,50 +56,65 @@ def display_time_series():
     fig.add_traces(
         go.Scatter(
         x=prophet_forecasts_df['datetime'],
-        y=prophet_forecasts_df['load_mw_forecasted_upper'],
+        y=prophet_forecasts_df['load_mw_forecasted_upper'].astype(float).round(),
+        mode="lines",
         name="upper bound",
-        line=dict(color="blue"),
-        fill="tonexty",
-        fillcolor="#eaecee",
-        connectgaps=False
+        marker=dict(color="#444"),
+        line=dict(width=0),
+        showlegend=False
         )
     )
     fig.add_traces(
         go.Scatter(
             x=prophet_forecasts_df["datetime"],
-            y=prophet_forecasts_df["load_mw_forecasted_lower"],
+            y=prophet_forecasts_df["load_mw_forecasted_lower"].astype(float).round(),
             name="lower bound",
             mode="lines",
-            line=dict(color="blue"),
+            marker=dict(color="#444"),
+            line=dict(width=0),
             fill="tonexty",
-            fillcolor="#eaecee",
-            connectgaps=False
+            fillcolor="rgba(68, 68, 68, 0.3)",
+            showlegend=False
         )
     )
     fig.add_traces(
         go.Scatter(
             x=prophet_forecasts_df["datetime"],
-            y=prophet_forecasts_df["load_mw_forecasted"],
-            name="forecasted load",
+            y=prophet_forecasts_df["load_mw_forecasted"].astype(float).round(),
+            name="my forecasts",
             mode="lines",
-            line=dict(color="green"),
-            fill="tonexty",
-            fillcolor="#eaecee",
-            connectgaps=False
+            line=dict(color='rgb(31, 119, 180)'),
         )
     )
     fig.add_traces(
         go.Scatter(
             x=prophet_forecasts_df["datetime"],
-            y=prophet_forecasts_df["load_mw_actual"],
-            name="actual load",
+            y=prophet_forecasts_df["load_mw_actual"].astype(float).round(),
+            name="actual",
             mode="lines",
-            line=dict(color="green"),
+            line=dict(color="orange"),
             fill="tonexty",
             fillcolor="#eaecee",
-            connectgaps=False
         )
     )
+    fig.add_traces(
+        go.Scatter(
+            x=prophet_forecasts_df["datetime"],
+            y=prophet_forecasts_df["load_mw_iso_forecasted"].astype(float).round(),
+            name="iso-ne forecasts",
+            mode="lines",
+            line=dict(color="red"),
+            fill="tonexty",
+            fillcolor="#eaecee",
+        )
+    )
+    fig.update_layout(
+        yaxis_title="Load (MW)",
+        title={
+            "text":"Recent forecasts for the New England power grid",
+            "x": .45,
+            "xanchor": "center"},
+        hovermode="x")
     return fig
 
 if __name__=='__main__':
