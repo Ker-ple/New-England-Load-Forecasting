@@ -1,0 +1,4 @@
+pg8000==1.29.4
+prophet==1.1.2
+pandas==1.5.2
+sqlalchemy==2.0.7

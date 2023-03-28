@@ -9,7 +9,7 @@ locals {
   iso_forecast_lambda_arn        = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.iso_forecast_lambda.id}-lambda-from-container-image"
   asos_lambda_arn                = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.asos_lambda.id}-lambda-from-container-image"
   pirate_lambda_arn              = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.this.account_id}:function:${random_pet.pirate_lambda.id}-lambda-from-container-image"
-}
+  }
 
 module "iso_load_step_function" {
   source  = "terraform-aws-modules/step-functions/aws"
@@ -95,30 +95,56 @@ module "asos_step_function" {
   }
 }
 
-module "pirate_step_function" {
-  source  = "terraform-aws-modules/step-functions/aws"
-  version = "2.7.3"
+module "eventbridge_prophet_forecast" {
+  source = "terraform-aws-modules/eventbridge/aws"
 
-  name = "PIRATE"
-  type = "STANDARD"
+  create_bus = false
+  role_name = "prophet_eventbridge_role"
 
-  definition = jsonencode(yamldecode(templatefile(
-    "${path.root}/state_machines/PIRATE.asl.yaml.tftpl", {
-      "config_pirate_lambda_arn"  = local.config_pirate_lambda_arn
-      "pirate_lambda_arn"         = local.pirate_lambda_arn
-      "config_iterate_lambda_arn" = local.config_iterate_lambda_arn
-  })))
-
-  attach_policy_statements = true
-  policy_statements = {
-    lambda = {
-      effect  = "Allow",
-      actions = ["lambda:InvokeFunction"],
-      resources = [
-        "${local.config_pirate_lambda_arn}:*",
-        "${local.pirate_lambda_arn}:*",
-        "${local.config_iterate_lambda_arn}:*"
-      ]
+  rules = {
+    prophet_crons = {
+      description         = "Triggers daily prophet forecast at 4:00pm UTC"
+      schedule_expression = "cron(0 16 * * ? *)"
     }
+  }
+
+  targets = {
+    prophet_crons = [
+      {
+        name  = "daily-prophet-forecast"
+        arn   = module.prophet_forecast.lambda_function_arn
+      }
+    ]
+  }
+
+  tags = {
+    "Name" = "prophet rule"
+  }
+}
+
+module "eventbridge_pirateweather" {
+  source = "terraform-aws-modules/eventbridge/aws"
+
+  create_bus = false
+  role_name = "pirateweather_eventbridge_role"
+
+  rules = {
+    pirate_crons = {
+      description         = "Triggers daily pirateweather requests at 3:30pm UTC"
+      schedule_expression = "cron(30 15 * * ? *)"
+    }
+  }
+
+  targets = {
+    pirate_crons = [
+      {
+        name  = "daily-pirateweather"
+        arn   = module.pirate_extract_weather_forecasts.lambda_function_arn
+      }
+    ]
+  }
+
+  tags = {
+    "Name" = "pirate rule"
   }
 }

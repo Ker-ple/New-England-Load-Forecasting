@@ -23,7 +23,6 @@ locals {
   sudo amazon-linux-extras install docker
   sudo service docker start
   sudo usermod -a -G docker ec2-user
-  docker run -d --name=grafana -p 3000:3000 grafana/grafana-oss
   sudo amazon-linux-extras enable postgresql14 -y &&
   sudo yum install postgresql -y
   echo export DB_HOST="${module.rds.db_instance_address}" | sudo tee -a /etc/profile
@@ -31,18 +30,17 @@ locals {
   echo export DB_PASSWORD="${var.db_password}" | sudo tee -a /etc/profile
   echo export DB_USER="${var.db_username}" | sudo tee -a /etc/profile
 
-  git config --global user.name "Ker-ple"
-  git config --global user.email "cyruskirbus@gmail.com"
-
-  echo "docker run -it -d -p 8888:8888 --name=jupyter -v /data:/home/jovyan/work \
-  -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
-  jupyter/scipy-notebook:2023-03-09"
-
   docker run -it -d -p 8888:8888 --name=jupyter -v /data:/home/jovyan/work \
   -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
   jupyter/scipy-notebook:2023-03-09
+
+  eval $(aws ecr get-login --region us-east-1 --no-include-email)
+  docker pull ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
+  docker run -it -d -p 8050:8050 --name=frontend -v /data/New-England-Load-Forecasting/Terraform/frontend:/wd \
+  -e DB_HOST=${module.rds.db_instance_address} -e DB_NAME=${var.db_name} -e DB_PASSWORD=${var.db_password} -e DB_USER=${var.db_username} \
+  ${data.aws_caller_identity.this.account_id}.dkr.ecr.us-east-1.amazonaws.com/${random_pet.frontend.id}:2.0
   
-  echo "Finished setting up jupyter container"
+  echo "Finished setting up containers"
 
   EOT
 }
@@ -56,7 +54,7 @@ module "ec2_instance" {
   user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
   ami                         = data.aws_ami.amazon_linux_2.id
-  instance_type               = "t3.small"
+  instance_type               = "t3.micro"
   key_name                    = var.generated_key_name
   availability_zone           = element(module.vpc.azs, 0)
   vpc_security_group_ids      = [module.security_group_ec2.security_group_id, module.security_group_db_ingestion.security_group_id]
@@ -143,6 +141,10 @@ resource "random_pet" "config_asos_lambda" {
   length = 2
 }
 
-resource "random_pet" "dev_node" {
+resource "random_pet" "frontend" {
+  length = 2
+}
+
+resource "random_pet" "prophet_forecast" {
   length = 2
 }
