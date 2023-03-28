@@ -102,19 +102,23 @@ module "eventbridge_prophet_forecast" {
   role_name = "prophet_eventbridge_role"
 
   rules = {
-    crons = {
+    prophet_crons = {
       description         = "Triggers daily prophet forecast at 4:00pm UTC"
       schedule_expression = "cron(0 16 * * ? *)"
     }
   }
 
   targets = {
-    crons = [
+    prophet_crons = [
       {
         name  = "daily-prophet-forecast"
         arn   = module.prophet_forecast.lambda_function_arn
       }
     ]
+  }
+
+  tags = {
+    "Name" = "prophet rule"
   }
 }
 
@@ -125,18 +129,22 @@ module "eventbridge_pirateweather" {
   role_name = "pirateweather_eventbridge_role"
 
   rules = {
-    crons = {
+    pirate_crons = {
       description         = "Triggers daily pirateweather requests at 3:30pm UTC"
       schedule_expression = "cron(30 15 * * ? *)"
     }
   }
 
   targets = {
-    crons = [
+    pirate_crons = [
       {
         name  = "daily-pirateweather"
         arn   = module.pirate_extract_weather_forecasts.lambda_function_arn
       }
     ]
+  }
+
+  tags = {
+    "Name" = "pirate rule"
   }
 }
