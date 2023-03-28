@@ -3,16 +3,16 @@ import pandas as pd
 import numpy as np
 from prophet import Prophet
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, text, insert
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 
 def lambda_handler(event, context):
     print(event)
     url = URL.create(
         "postgresql+pg8000",
-        username=os.environ.get('DB_USER'),
+        username=os.environ.get('DB_USERNAME'),
         password=os.environ.get('DB_PASSWORD'),
-        host=os.environ.get('DB_HOST'),
+        host=os.environ.get('DB_HOSTNAME'),
         database=os.environ.get('DB_NAME')
     )
 
@@ -33,7 +33,7 @@ def lambda_handler(event, context):
     predictions = m.predict(future_data)
     predictions = clean_predictions(predictions)
     predictions.to_sql('prophet_forecast', index=False, if_exists='append', con=engine)
-    print('first row of predictions:\n', voi.loc[0, :])
+    print('first row of predictions:\n', predictions.loc[0, :])
     return 'success'
 
 def get_past_data(connection):
@@ -101,7 +101,8 @@ def get_future_data(connection):
             WHERE forecasted_for >= NOW() 
             AND (latitude, longitude) IN ({}) 
             GROUP BY forecasted_for) rec
-            ON wf.forecasted_for = rec.forecasted_for AND wf.forecasted_at = rec.MaxDate
+            ON wf.forecasted_for = rec.forecasted_for 
+            AND wf.forecasted_at = rec.MaxDate
             GROUP BY wf.forecasted_for
             ORDER BY wf.forecasted_for ASC;'''.format(values)
         df = pd.read_sql(sql=text(stmt), con=connection)
