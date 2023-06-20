@@ -8,7 +8,7 @@ module "cdn" {
   enabled             = true
   is_ipv6_enabled     = true
   price_class         = "PriceClass_100"
-  retain_on_delete    = true
+  retain_on_delete    = false
   wait_for_deployment = true
 
   origin = {
@@ -27,16 +27,28 @@ module "cdn" {
     target_origin_id           = "ec2"
     viewer_protocol_policy     = "allow-all"
 
-    allowed_methods = ["GET", "HEAD", "OPTIONS"]
-    cached_methods  = ["GET", "HEAD"]
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     compress        = true
-    query_string    = true
   }
 
   viewer_certificate = {
-    acm_certificate_arn = "arn:aws:acm:us-east-1:485809471371:certificate/335a6c64-6850-42e5-a424-ee071140e173"
+    acm_certificate_arn = module.acm.acm_certificate_arn
     ssl_support_method  = "sni-only"
   }
+}
+
+module "acm" {
+  source  = "terraform-aws-modules/acm/aws"
+  version = "~> 4.0"
+
+  domain_name               = "thenapkinnotes.com"
+  subject_alternative_names = ["www.thenapkinnotes.com"]
+
+  validation_method = "EMAIL"
+
+  zone_id = module.zones.route53_zone_zone_id["thenapkinnotes.com"]
+
+  create_route53_records = true
 }
 
 module "zones" {
