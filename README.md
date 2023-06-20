@@ -11,7 +11,7 @@ This projects scrapes weather data from 80 different weather stations on a daily
 The architecture consists of various AWS services constructed with Terraform. Mostly notably, the scraping is done by four different State Machines which uses AWS lambda to scrape the above-described data, and the result ends up in an RDS Postgres DB. I have also set up an an EC2 with DB access to perform my analyses, host the frontend for this project, and create the models.
 
 ## Tech used
-- Python (and associated libraries, e.g. pandas, sqlalchemy, httpx, scikit-learn, ...)
+- Python (and associated libraries, e.g. prophet, pandas, sqlalchemy, Flask, Plotly, scikit-learn, pg8000, httpx, ...)
 - SQL
 - Terraform 
 - Docker (for the lambdas and a jupyter container on the EC2)
