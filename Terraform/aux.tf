@@ -77,7 +77,7 @@ resource "aws_volume_attachment" "this" {
 
 resource "aws_ebs_volume" "this" {
   availability_zone = element(module.vpc.azs, 0)
-  size              = 5
+  size              = 6
 }
 
 resource "tls_private_key" "dev_key" {
