@@ -44,10 +44,10 @@ stmt = '''SELECT
 
 url = URL.create(
         "postgresql+pg8000",
-        username="kerple",
-        password="k0pv7W0SrjukyN1LCGZOLzaGk",
-        host="iso-project-db.cuhwc5ytptg0.us-east-1.rds.amazonaws.com",
-        database="my_postgres_db"
+        username=os.environ.get('DB_USER'),
+        password=os.environ.get('DB_PASSWORD'),
+        host=os.environ.get('DB_HOST'),
+        database=os.environ.get('DB_NAME')
     )
 
 engine = create_engine(url)
@@ -64,7 +64,7 @@ def serve_layout():
         dcc.Graph(id='load-chart'),
         dcc.Interval(
             id='refresh',
-            interval=3.6e6,
+            interval=300000,
             n_intervals=0
         )
     ])
@@ -136,4 +136,4 @@ def display_time_series(n):
     return fig
 
 if __name__=='__main__':
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server()
